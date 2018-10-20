@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
@@ -17,23 +16,18 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 import com.arcsoft.facerecognition.AFR_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKMatching;
 import com.runvision.bean.AppData;
 import com.runvision.bean.FaceInfo;
 import com.runvision.bean.ImageStack;
-import com.runvision.broadcast.NetWorkStateReceiver;
 import com.runvision.core.Const;
 import com.runvision.db.Record;
 import com.runvision.db.User;
 import com.runvision.gpio.GPIOHelper;
-import com.runvision.gpio.SlecProtocol;
 import com.runvision.myview.MyCameraSuf;
-import com.runvision.thread.BatchImport;
 import com.runvision.thread.FaceFramTask;
 import com.runvision.thread.HeartBeatThread;
 import com.runvision.thread.SocketThread;
@@ -44,22 +38,6 @@ import com.runvision.utils.IDUtils;
 import com.runvision.utils.SPUtil;
 import com.runvision.utils.SendData;
 import com.runvision.utils.TestDate;
-import com.runvision.webcore.ServerManager;
-import com.wits.serialport.SerialPortManager;
-import com.zkteco.android.biometric.module.idcard.IDCardReader;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.security.InvalidParameterException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import android_serialport_api.SerialPort;
@@ -92,11 +70,7 @@ public class FaceActivity extends Activity implements View.OnClickListener {
 
     private MediaPlayer mPlayer;//音频
 
-    private boolean TipsFlag = false;
-
     private FaceFramTask faceDetectTask = null;
-
-    private boolean bStop = false;
 
     private boolean oneVsMoreThreadStauts = false;
     private boolean isOpenOneVsMore = true;
@@ -157,7 +131,7 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                             }
                         }
                     }
-                    if (SerialPort.Fill_in_light == true) {   //补光灯
+                    if (SerialPort.Fill_in_light == true) {//补光灯
                         timingnum++;
                         if (timingnum >= 100) {
                             Log.i("zhuhuilong", "Fill_in_light:" + SerialPort.Fill_in_light);
@@ -180,7 +154,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                         }
                     }
                     break;
-
                 case Const.MSG_FACE://开启一比n处理
                     FaceInfo info = (FaceInfo) msg.obj;
                     openOneVsMoreThread(info);
@@ -201,7 +174,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                         // 开启人脸比对线程
                         stratThread();
                         Infra_red = true;
-                        bStop = false;
 
                         if (uithread == null) {
                             uithread = new UIThread();
@@ -238,7 +210,7 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_face);
         // 全屏代码
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -297,7 +269,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
             }
         }
         isOpenOneVsMore = false;
-        bStop = true;
     }
 
     @Override
