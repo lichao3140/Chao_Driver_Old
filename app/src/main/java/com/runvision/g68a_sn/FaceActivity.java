@@ -327,7 +327,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     @Override
     protected void onDestroy() {
         MyApplication.mFaceLibCore.UninitialAllEngine();
-        mSerialPortManager.closeSerialPort4();
         super.onDestroy();
     }
 
@@ -472,7 +471,7 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                     return;
                 }
                 GPIOHelper.openDoor(true);
-                openRelay();
+                //串口开门
 
                 mHandler.postDelayed(new Runnable() {
                     @Override
@@ -835,135 +834,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     public void onBackPressed() {
         cancelToast();
         super.onBackPressed();
-    }
-
-
-    public void rebootSU() {
-        Runtime runtime = Runtime.getRuntime();
-        Process proc = null;
-        OutputStreamWriter osw = null;
-        StringBuilder sbstdOut = new StringBuilder();
-        StringBuilder sbstdErr = new StringBuilder();
-
-        String command = "/system/bin/reboot";
-
-        try { // Run Script
-            proc = runtime.exec("su");
-            osw = new OutputStreamWriter(proc.getOutputStream());
-            osw.write(command);
-            osw.flush();
-            osw.close();
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        } finally {
-            if (osw != null) {
-                try {
-                    osw.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        try {
-            if (proc != null)
-                proc.waitFor();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        sbstdOut.append(new BufferedReader(new InputStreamReader(proc
-                .getInputStream())));
-        sbstdErr.append(new BufferedReader(new InputStreamReader(proc
-                .getErrorStream())));
-        if (proc.exitValue() != 0) {
-        }
-    }
-
-    //获取当前系统时间
-    private Date currentTime = null;//currentTime就是系统当前时间
-    //定义时间的格式
-    private DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private Date strbeginDate = null;//起始时间
-    private Date strendDate = null;//结束时间
-    private boolean range = false;
-
-    public Boolean TimeCompare(String strbeginTime, String strendTime, String currentTime1) {
-        try {
-            strbeginDate = fmt.parse(strbeginTime);//将时间转化成相同格式的Date类型
-            strendDate = fmt.parse(strendTime);
-            currentTime = fmt.parse(currentTime1);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        if ((currentTime.getTime() - strbeginDate.getTime()) > 0 && (strendDate.getTime() - currentTime.getTime()) > 0) {//使用.getTime方法把时间转化成毫秒数,然后进行比较
-            range = true;
-        } else {
-            range = false;
-        }
-        return range;
-    }
-
-    private SerialPortManager mSerialPortManager;
-    private InputStream mInputStream4;
-    private OutputStream mOutputStream4;
-    private com.wits.serialport.SerialPort serialPort4;
-    private String icCard = "";
-
-    public void openRelay() {
-        if (mOutputStream4 == null) {
-            showToast("请先打开串口");
-            return;
-        }
-        try {
-            byte[] bytes1 = SlecProtocol.hexStringToBytes(new String[]{
-                            "55555555",  //用户id,8个字符，缺少的前面补0
-                            "12345678",//用户卡号,8个字符，缺少的的前面补0
-                            "0001"}//开门间隔,4个字符，缺少的的前面补0
-                    , true);
-            byte[] bytes = SlecProtocol.commandAndDataToAscii(
-                    ((byte) 0x01),
-                    bytes1
-            );
-            mOutputStream4.write(bytes);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 在java代码中执行adb命令
-     *
-     * @param command
-     * @return
-     */
-    public String execCommand(String command) {
-        Runtime runtime;
-        Process proc = null;
-        StringBuffer stringBuffer = null;
-        try {
-            runtime = Runtime.getRuntime();
-            proc = runtime.exec(command);
-            stringBuffer = new StringBuffer();
-            if (proc.waitFor() != 0) {
-                System.err.println("exit value = " + proc.exitValue());
-            }
-            BufferedReader in = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-
-            String line = null;
-            while ((line = in.readLine()) != null) {
-                stringBuffer.append(line + " ");
-            }
-
-        } catch (Exception e) {
-            System.err.println(e);
-        } finally {
-            try {
-                proc.destroy();
-            } catch (Exception e2) {
-            }
-        }
-        return stringBuffer.toString();
     }
 
 }
