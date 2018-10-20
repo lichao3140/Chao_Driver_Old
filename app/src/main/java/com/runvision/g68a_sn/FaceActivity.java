@@ -91,8 +91,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     private ImageView faceBmp_view, cardBmp_view, idcard_Bmp, isSuccessComper;
     private TextView card_name, card_sex, card_nation, name, year, month, day, addr, cardNumber, version;
 
-    private ImageView home_set;
-
     private View pro_xml;//刷卡标记
 
     public int logshowflag = 0;
@@ -306,7 +304,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
         }
         mMyRedThread.startredThread();
         isOpenOneVsMore = true;
-        // Log.i("Gavin","mList:"+MyApplication.mList.size());
     }
 
     @Override
@@ -356,7 +353,7 @@ public class FaceActivity extends Activity implements View.OnClickListener {
 
         // 提示框
         promptshow_xml = findViewById(R.id.promptshow_xml);
-        loadprompt = (TextView) promptshow_xml.findViewById(R.id.loadprompt);
+        loadprompt = promptshow_xml.findViewById(R.id.loadprompt);
 
         //1:N
         oneVsMoreView = findViewById(R.id.onevsmore);
@@ -368,30 +365,22 @@ public class FaceActivity extends Activity implements View.OnClickListener {
 
         //1:1
         alert = findViewById(R.id.alert_xml);
-        faceBmp_view = (ImageView) alert.findViewById(R.id.comperFacebm);
-        cardBmp_view = (ImageView) alert.findViewById(R.id.comperCardbm);
-        idcard_Bmp = (ImageView) alert.findViewById(R.id.cardImage);
-        card_name = (TextView) alert.findViewById(R.id.name_1);
-        name = (TextView) alert.findViewById(R.id.userName);
-        card_sex = (TextView) alert.findViewById(R.id.sex);
-        card_nation = (TextView) alert.findViewById(R.id.nation);
-        year = (TextView) alert.findViewById(R.id.year);
-        day = (TextView) alert.findViewById(R.id.day);
-        month = (TextView) alert.findViewById(R.id.month);
-        addr = (TextView) alert.findViewById(R.id.addr);
-        cardNumber = (TextView) alert.findViewById(R.id.cardNumber);
-        isSuccessComper = (ImageView) alert.findViewById(R.id.isSuccessComper);
+        faceBmp_view = alert.findViewById(R.id.comperFacebm);
+        cardBmp_view = alert.findViewById(R.id.comperCardbm);
+        idcard_Bmp = alert.findViewById(R.id.cardImage);
+        card_name = alert.findViewById(R.id.name_1);
+        name = alert.findViewById(R.id.userName);
+        card_sex = alert.findViewById(R.id.sex);
+        card_nation = alert.findViewById(R.id.nation);
+        year = alert.findViewById(R.id.year);
+        day = alert.findViewById(R.id.day);
+        month = alert.findViewById(R.id.month);
+        addr = alert.findViewById(R.id.addr);
+        cardNumber = alert.findViewById(R.id.cardNumber);
+        isSuccessComper = alert.findViewById(R.id.isSuccessComper);
 
         //刷卡标记
         pro_xml = findViewById(R.id.pro);
-
-        home_set = (ImageView) findViewById(R.id.home_set);
-        home_set.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startActivity(new Intent(FaceActivity.this, RegisterActivity.class));
-            }
-        });
     }
 
     private void initRelay() {
@@ -541,141 +530,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     }
 
     /**
-     * 1v1显示对比后成功是否窗口
-     */
-    private void showAlertDialog() {
-        String str = "";
-        cardBmp_view.setImageBitmap(AppData.getAppData().getCardBmp());
-        idcard_Bmp.setImageBitmap(AppData.getAppData().getCardBmp());
-        card_name.setText(AppData.getAppData().getName());
-        card_sex.setText(AppData.getAppData().getSex());
-        name.setText(AppData.getAppData().getName());
-        year.setText(AppData.getAppData().getBirthday().substring(0, 4));
-        month.setText(AppData.getAppData().getBirthday().substring(5, 7));
-        day.setText(AppData.getAppData().getBirthday().substring(8, 10));
-        addr.setText(AppData.getAppData().getAddress());
-        cardNumber.setText(AppData.getAppData().getCardNo().substring(0, 4)
-                + "************"
-                + AppData.getAppData().getCardNo().substring(16, 18));
-        card_nation.setText(AppData.getAppData().getNation());
-        faceBmp_view.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        if (AppData.getAppData().getoneCompareScore() == 0) {
-            str = "失败";
-            isSuccessComper.setImageResource(R.mipmap.icon_sb);
-            if (AppData.getAppData().getOneFaceBmp() == null) {
-                faceBmp_view.setImageResource(R.mipmap.tx);
-                faceBmp_view.setScaleType(ImageView.ScaleType.FIT_XY);
-            } else {
-                faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
-                //保存抓拍图片
-                String snapImageID = IDUtils.genImageName();
-                FileUtils.saveFile(AppData.getAppData().getOneFaceBmp(), snapImageID, TestDate.DGetSysTime() + "_Face");
-                //保存身份证图片
-                String cardImageID = snapImageID + "_card";
-                FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
-
-                Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
-                User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
-                user.setRecord(record);
-                MyApplication.faceProvider.addRecord(user);
-            }
-            playMusic(R.raw.error);
-
-            oneVsMoreView.setVisibility(View.GONE);
-            alert.setVisibility(View.VISIBLE);
-
-        } else if (AppData.getAppData().getoneCompareScore() < SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE) && AppData.getAppData().getOneFaceBmp() != null) {
-            str = "失败";
-            isSuccessComper.setImageResource(R.mipmap.icon_sb);
-            playMusic(R.raw.error);
-            faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
-            //保存抓拍图片
-            String snapImageID = IDUtils.genImageName();
-            FileUtils.saveFile(AppData.getAppData().getOneFaceBmp(), snapImageID, TestDate.DGetSysTime() + "_Face");
-            //保存身份证图片
-            String cardImageID = snapImageID + "_card";
-            FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
-
-            Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
-            User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
-            user.setRecord(record);
-            MyApplication.faceProvider.addRecord(user);
-
-            oneVsMoreView.setVisibility(View.GONE);
-            alert.setVisibility(View.VISIBLE);
-        } else if (AppData.getAppData().getOneFaceBmp() != null && AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE)) {
-            str = "成功";
-            playMusic(R.raw.success);
-            isSuccessComper.setImageResource(R.mipmap.icon_tg);
-            faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
-            GPIOHelper.openDoor(true);
-
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    GPIOHelper.openDoor(false);
-                }
-            }, SPUtil.getInt(Const.KEY_OPENDOOR, Const.CLOSE_DOOR_TIME) * 1000);
-
-            //保存抓拍图片
-            String snapImageID = IDUtils.genImageName();
-            if (AppData.getAppData().getOneFaceBmp() != null) {
-                FileUtils.saveFile(AppData.getAppData().getOneFaceBmp(), snapImageID, TestDate.DGetSysTime() + "_Face");
-            }
-            //保存身份证图片
-            String cardImageID = snapImageID + "_card";
-            if (AppData.getAppData().getCardBmp() != null) {
-                FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
-            }
-
-            Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
-            User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
-            user.setRecord(record);
-            MyApplication.faceProvider.addRecord(user);
-
-
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    GPIOHelper.openDoor(false);
-                }
-            }, 1000);
-            oneVsMoreView.setVisibility(View.GONE);
-            alert.setVisibility(View.VISIBLE);
-
-        } else {
-            oneVsMoreView.setVisibility(View.GONE);
-            alert.setVisibility(View.GONE);
-        }
-
-        if (AppData.getAppData().getoneCompareScore() < SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE) && AppData.getAppData().getOneFaceBmp() != null) {
-            //    Log.i("Gavin","人证失败："+socketThread.toString());
-            if (socketThread != null) {
-                SendData.sendComperMsgInfo(socketThread, false, Const.TYPE_CARD);
-            } else {
-                AppData.getAppData().clean();
-            }
-        }
-        if (AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE) && AppData.getAppData().getOneFaceBmp() != null) {
-            if (socketThread != null) {
-                SendData.sendComperMsgInfo(socketThread, true, Const.TYPE_CARD);
-            } else {
-                AppData.getAppData().clean();
-            }
-        }
-
-        AppData.getAppData().setoneCompareScore(0);
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                oneVsMoreView.setVisibility(View.GONE);
-                alert.setVisibility(View.GONE);
-            }
-        }, 2000);
-    }
-
-
-    /**
      * 播放语音
      */
     public void playMusic(int msuicID) {
@@ -722,32 +576,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
 
                         Log.i("Gavin0903", "for");
 
-                      /*  Iterator iter = MyApplication.mList.entrySet().iterator();
-                        while (iter.hasNext()) {
-                            if((isOpenOneVsMore==false)||(Const.BATCH_IMPORT_TEMPLATE==true))
-                            {
-                                //  AppData.getAppData().setCompareScore(0);
-                                continue;
-                            }
-                            Map.Entry entry = (Map.Entry) iter.next();
-                            String fileName = (String) entry.getKey();
-                            byte[] mTemplate = (byte[]) entry.getValue();
-                            AFR_FSDKFace face3 = new AFR_FSDKFace(mTemplate);
-                            ret = MyApplication.mFaceLibCore.FacePairMatching(face3, face, score);
-                            if (score.getScore() >= fenshu) {
-                                if(user==null) {
-                                    user = new User();
-                                }
-                                if (MyApplication.faceProvider.quaryUserTableRowCount("select count(id) from tUser") != 0) {
-                                    user.setId(MyApplication.faceProvider.getUserByUserpath(fileName).getId());
-                                    AppData.getAppData().setUser(user);
-                                }
-                                fenshu = score.getScore();
-                                continue;
-                            }
-                        }*/
-
-
                         for (Map.Entry<String, byte[]> entry : MyApplication.mList.entrySet()) {
                             if ((isOpenOneVsMore == false) || (Const.BATCH_IMPORT_TEMPLATE == true) || (Const.DELETETEMPLATE == true)) {
                                 //  AppData.getAppData().setCompareScore(0);
@@ -775,14 +603,12 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                         }
                         Log.i("GavinTest", "for后" + System.currentTimeMillis());
                         Log.i("GavinTest", "fenshu:" + fenshu);
-                        // AppData.getAppData().setCompareScore(fenshu);
                         AppData.getAppData().setCompareScore(fenshu);
                     }
                 } else {
                     AppData.getAppData().setCompareScore(0);
                 }
                 if (isOpenOneVsMore != false) {
-                    // Log.i("Gavin", "发送消息:");
                     Message msg = new Message();
                     msg.what = Const.COMPER_END;
                     mHandler.sendMessage(msg);
@@ -844,9 +670,7 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                                 msg4.what = Const.FLAG_SHOW_LOG;
                                 msg4.obj = 2;
                                 mHandler.sendMessage(msg4);
-
                             }
-                            //handler.removeMessages(0);
                         }
                     } catch (InterruptedException e) {
                         break;
@@ -879,7 +703,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                     msg.what = Const.UPDATE_UI;
                     mHandler.sendMessage(msg);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
