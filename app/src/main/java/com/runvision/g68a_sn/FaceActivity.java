@@ -18,6 +18,7 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
 import com.arcsoft.facerecognition.AFR_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKMatching;
 import com.runvision.bean.AppData;
@@ -38,8 +39,10 @@ import com.runvision.utils.IDUtils;
 import com.runvision.utils.SPUtil;
 import com.runvision.utils.SendData;
 import com.runvision.utils.TestDate;
+
 import java.util.List;
 import java.util.Map;
+
 import android_serialport_api.SerialPort;
 
 /**
@@ -49,11 +52,9 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     private static String TAG = FaceActivity.class.getSimpleName();
 
     private Context mContext;
-    //private ComperThread mComperThread;//1:n比对线程
     private MyRedThread mMyRedThread;//红外线程
     private UIThread uithread;//UI线程
 
-    //////////////////////////////////////////////////视图控件
     public MyCameraSuf mCameraSurfView;
     private RelativeLayout home_layout;
 
@@ -64,12 +65,8 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     private ImageView oneVsMore_face, oneVsMore_temper;
     private TextView oneVsMore_userName, oneVsMore_userID, oneVsMore_userType;
 
-    private View pro_xml;//刷卡标记
-
     public int logshowflag = 0;
-
     private MediaPlayer mPlayer;//音频
-
     private FaceFramTask faceDetectTask = null;
 
     private boolean oneVsMoreThreadStauts = false;
@@ -77,19 +74,10 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     private boolean Infra_red = true;
     private ImageStack imageStack;
 
-    public boolean comparisonEnd = false;
     private int timingnum = 0;
 
     private MyApplication application;
-    private SocketThread socketThread;
-    private HeartBeatThread heartBeatThread;
-
-    private Dialog dialog = null;
     private int templatenum = 0;
-
-    private Boolean SysTimeflag = true;
-
-    List<User> mList;
 
     /**
      * 消息响应
@@ -100,7 +88,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case Const.UPDATE_UI://更新UI
-
                     if (Const.DELETETEMPLATE == true) {
                         isOpenOneVsMore = false;
                         mHandler.postDelayed(new Runnable() {
@@ -113,18 +100,12 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                     }
 
                     /*显示逻辑*/
-                    if (promptshow_xml.getVisibility() == View.VISIBLE) {
-                        oneVsMoreView.setVisibility(View.GONE);
-                        pro_xml.setVisibility(View.GONE);
-                        // home_layout.setVisibility(View.GONE);
-                    }
                     if (isOpenOneVsMore == false) {
                         mHandler.removeMessages(Const.COMPER_END);
                         mHandler.removeMessages(Const.MSG_FACE);
                     }
                     if (faceDetectTask != null) {
-                        if (faceDetectTask.faceflag == true)//检测到有人脸
-                        {
+                        if (faceDetectTask.faceflag == true) {//检测到有人脸
                             logshowflag = 0;
                             if (SerialPort.Fill_in_light == false) {
                                 SerialPort.openLED();
@@ -185,7 +166,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                     int count4 = (Integer) msg.obj;
                     oneVsMoreView.setVisibility(View.GONE);
                     promptshow_xml.setVisibility(View.GONE);
-                    pro_xml.setVisibility(View.GONE);
                     Infra_red = false;
                     if (count4 > 0) {
                         Message msgb = obtainMessage();
@@ -296,9 +276,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
         oneVsMore_userName = oneVsMoreView.findViewById(R.id.onevsmore_userName);
         oneVsMore_userID = oneVsMoreView.findViewById(R.id.onevsmore_userID);
         oneVsMore_userType = oneVsMoreView.findViewById(R.id.onevsmore_userType);
-
-        //刷卡标记
-        pro_xml = findViewById(R.id.pro);
     }
 
     /**
@@ -429,12 +406,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                     }
                 }, 1000);
 
-
-                if (socketThread != null) {
-                    SendData.sendComperMsgInfo(socketThread, true, Const.TYPE_ONEVSMORE);
-                } else {
-                    AppData.getAppData().clean();
-                }
             } else if (AppData.getAppData().getCompareScore() != 0) {
                 Const.ONE_VS_MORE_TIMEOUT_NUM++;
             }
@@ -559,7 +530,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
         public void run() {
             super.run();
             while (true) {
-                //Log.i("Gavin","redflag:" +redflag);
                 // G68A设备红外接口不一样
                 int status = GPIOHelper.readStatus();
                 status = 1;
