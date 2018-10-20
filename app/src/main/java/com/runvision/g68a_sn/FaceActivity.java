@@ -83,7 +83,10 @@ import java.util.List;
 import java.util.Map;
 import android_serialport_api.SerialPort;
 
-public class FaceActivity extends Activity implements NetWorkStateReceiver.INetStatusListener, View.OnClickListener {
+/**
+ * 人脸验证
+ */
+public class FaceActivity extends Activity implements View.OnClickListener {
     private static String TAG = FaceActivity.class.getSimpleName();
 
     private Context mContext;
@@ -160,6 +163,7 @@ public class FaceActivity extends Activity implements NetWorkStateReceiver.INetS
     /**
      * 消息响应
      */
+    @SuppressLint("HandlerLeak")
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -446,7 +450,6 @@ public class FaceActivity extends Activity implements NetWorkStateReceiver.INetS
                     break;
                 case Const.SOCKET_DIDCONNECT:/*socket断开连接*/
                     socket_status.setBackgroundResource(R.drawable.socket_false);
-                    closeSocket();
                     break;
                 case Const.SOCKRT_SENDIMAGE:/*VMS批量导入操作*/
                     batchImport();
@@ -533,8 +536,6 @@ public class FaceActivity extends Activity implements NetWorkStateReceiver.INetS
         application.init();
         application.addActivity(this);
 
-        openNetStatusReceiver();
-        openSocket();
     }
 
     @Override
@@ -1336,62 +1337,6 @@ public class FaceActivity extends Activity implements NetWorkStateReceiver.INetS
         }
     }
 
-    /**
-     * 开启HTTP服务时显示IP
-     *
-     * @param ip
-     */
-    public void httpStrat(String ip) {
-        if (!TextUtils.isEmpty(ip)) {
-            showHttpUrl.setText(ip + ":8088");
-        } else {
-            showHttpUrl.setText("");
-        }
-    }
-
-    /**
-     * HTTP服务开启异常时
-     *
-     * @param msg
-     */
-    public void httpError(String msg) {
-        showHttpUrl.setText(msg + "---请重启软件，获取IP地址");
-    }
-
-    /**
-     * 关闭服务
-     */
-    public void httpStop() {
-        showHttpUrl.setText("The HTTP Server is stopped---请重启软件，获取IP地址");
-    }
-
-    /**
-     * 注册网络监听广播
-     */
-    private void openNetStatusReceiver() {
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-        receiver = new NetWorkStateReceiver();
-        receiver.setmINetStatusListener(this);
-        registerReceiver(receiver, filter);
-    }
-
-    /**
-     * 网络状态改变  接口回调的数据     *
-     *
-     * @param state
-     */
-    @Override
-    public void getNetState(int state) {
-        if (state == 0) {
-            System.out.println("conn");
-            openSocket();
-        } else {
-            System.out.println("dis conn");
-            closeSocket();
-        }
-    }
-
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
@@ -1400,23 +1345,7 @@ public class FaceActivity extends Activity implements NetWorkStateReceiver.INetS
         }
     }
 
-    /**
-     * 打开socket连接
-     */
-    private void openSocket() {
-        boolean conn = ConversionHelp.isNetworkConnected(mContext);
-        receiver.setIs_conn(conn);
-        if (!conn) {
-            Toast.makeText(mContext, "没有网络,不开启socket连接", Toast.LENGTH_SHORT).show();
-            com.runvision.core.LogToFile.i("MainActivity", "没有网络,不开启socket连接");
-            return;
-        }
 
-        if (!SPUtil.getString(Const.KEY_VMSIP, "").equals("") && SPUtil.getInt(Const.KEY_VMSPROT, 0) != 0 && !SPUtil.getString(Const.KEY_VMSUSERNAME, "").equals("") && !SPUtil.getString(Const.KEY_VMSPASSWORD, "").equals("")) {
-            //开启socket线程
-            socketReconnect(SPUtil.getString(Const.KEY_VMSIP, ""), SPUtil.getInt(Const.KEY_VMSPROT, 0));
-        }
-    }
 
     /**
      * socket重连接
@@ -1436,25 +1365,6 @@ public class FaceActivity extends Activity implements NetWorkStateReceiver.INetS
             socketThread = new SocketThread(ip, port, mHandler);
         }
         socketThread.start();
-    }
-
-    /**
-     * 结束socket
-     *
-     * @param
-     */
-    public void closeSocket() {
-        if (heartBeatThread != null) {
-            //取消心跳
-            heartBeatThread.HeartBeatThread_flag = false;
-            heartBeatThread = null;
-        }
-        //结束socket
-        if (socketThread != null) {
-            socketThread.close();
-            socketThread = null;
-        }
-
     }
 
     //上传的所有数据长度大小
