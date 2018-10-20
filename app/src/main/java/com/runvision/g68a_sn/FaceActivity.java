@@ -2,7 +2,6 @@ package com.runvision.g68a_sn;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -18,7 +17,6 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
 import com.arcsoft.facerecognition.AFR_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKMatching;
 import com.runvision.bean.AppData;
@@ -30,19 +28,13 @@ import com.runvision.db.User;
 import com.runvision.gpio.GPIOHelper;
 import com.runvision.myview.MyCameraSuf;
 import com.runvision.thread.FaceFramTask;
-import com.runvision.thread.HeartBeatThread;
-import com.runvision.thread.SocketThread;
 import com.runvision.utils.CameraHelp;
 import com.runvision.utils.DateTimeUtils;
 import com.runvision.utils.FileUtils;
 import com.runvision.utils.IDUtils;
 import com.runvision.utils.SPUtil;
-import com.runvision.utils.SendData;
 import com.runvision.utils.TestDate;
-
-import java.util.List;
 import java.util.Map;
-
 import android_serialport_api.SerialPort;
 
 /**
@@ -326,7 +318,7 @@ public class FaceActivity extends Activity implements View.OnClickListener {
      */
     private void ShowPromptMessage(String showmessage, int audionum) {
         if (audionum == 1) {
-            playMusic(R.raw.burlcard);
+            playMusic(R.raw.valid_not_pass);
         }
         if (audionum == 3) {
             playMusic(R.raw.blacklist);
@@ -351,7 +343,7 @@ public class FaceActivity extends Activity implements View.OnClickListener {
             if (AppData.getAppData().getCompareScore() <= SPUtil.getFloat(Const.KEY_ONEVSMORESCORE, Const.ONEVSMORE_SCORE) && Const.ONE_VS_MORE_TIMEOUT_NUM >= Const.ONE_VS_MORE_TIMEOUT_MAXNUM) {
                 if (promptshow_xml.getVisibility() != View.VISIBLE) {
                     Const.ONE_VS_MORE_TIMEOUT_NUM = 0;
-                    ShowPromptMessage("请刷身份证", 1);
+                    ShowPromptMessage("验证失败", 1);
                 }
             } else if (AppData.getAppData().getCompareScore() > SPUtil.getFloat(Const.KEY_ONEVSMORESCORE, Const.ONEVSMORE_SCORE) && AppData.getAppData().getNFaceBmp() != null) {
                 String sdCardDir = null;
@@ -456,12 +448,8 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                     }
                     Log.i("GavinTest", "for前" + System.currentTimeMillis());
                     if (MyApplication.mList.size() > 0) {
-
-                        Log.i("Gavin0903", "for");
-
                         for (Map.Entry<String, byte[]> entry : MyApplication.mList.entrySet()) {
                             if ((isOpenOneVsMore == false) || (Const.BATCH_IMPORT_TEMPLATE == true) || (Const.DELETETEMPLATE == true)) {
-                                //  AppData.getAppData().setCompareScore(0);
                                 continue;
                             }
                             String fileName = (String) entry.getKey();
@@ -484,8 +472,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                                 continue;
                             }
                         }
-                        Log.i("GavinTest", "for后" + System.currentTimeMillis());
-                        Log.i("GavinTest", "fenshu:" + fenshu);
                         AppData.getAppData().setCompareScore(fenshu);
                     }
                 } else {
