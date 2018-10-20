@@ -116,14 +116,11 @@ public class FaceActivity extends Activity implements View.OnClickListener {
 
     private Dialog dialog = null;
     private int templatenum = 0;
-    private int template = 0;
-    private Toast mToast;
 
     private Boolean SysTimeflag = true;
 
     List<User> mList;
 
-    // private boolean vms_Import_template=false;
     /**
      * 消息响应
      */
@@ -190,7 +187,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                         Const.VMS_TEMPLATE = false;
                         Log.i("Gavin_debug", "templatenum==20");
                         promptshow_xml.setVisibility(View.GONE);
-                        cancelToast();
                         isOpenOneVsMore = true;//1:n
                         if (faceDetectTask != null) {
                             faceDetectTask.isRuning = true;//人脸框
@@ -199,8 +195,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                         if (mMyRedThread != null) {
                             mMyRedThread.startredThread();
                         }
-                        template = 0;
-                        // home_layout.setVisibility(View.GONE);
                     }
                     break;
 
@@ -698,14 +692,7 @@ public class FaceActivity extends Activity implements View.OnClickListener {
         }
     }
 
-    public void cancelToast() {
-        if (mToast != null) {
-            mToast.cancel();
-        }
-    }
-
     public void onBackPressed() {
-        cancelToast();
         super.onBackPressed();
     }
 
