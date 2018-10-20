@@ -309,7 +309,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                     home_layout.setVisibility(View.GONE);
                     pro_xml.setVisibility(View.VISIBLE);
                     IDCardInfo Idinfo = (IDCardInfo) msg.obj;
-                    toComperFace(Idinfo);
                     break;
                 case Const.COMPER_END://1:n比对显示
                     showAlert();
@@ -496,13 +495,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     protected void onResume() {
         super.onResume();
         hideBottomUIMenu();
-        // stratThread();
-        // bStop = false;
-        IntentFilter usbDeviceStateFilter = new IntentFilter();
-        usbDeviceStateFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        usbDeviceStateFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        registerReceiver(mUsbReceiver, usbDeviceStateFilter);
-        startIDCardReader();
 
         if (uithread == null) {
             uithread = new UIThread();
@@ -546,13 +538,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
         }
         isOpenOneVsMore = false;
         bStop = true;
-        try {
-            idCardReader.close(0);
-        } catch (IDCardReaderException e) {
-            Log.i(TAG, "关闭失败");
-        }
-        IDCardReaderFactory.destroy(idCardReader);
-        unregisterReceiver(mUsbReceiver);
     }
 
     @Override
@@ -640,187 +625,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
             oneVsMoreThreadStauts = true;
             OneVsMoreThread thread = new OneVsMoreThread(info);
             thread.start();
-        }
-    }
-
-    /**
-     * 身份证读取
-     */
-    private void toComperFace(final IDCardInfo idCardInfo) {
-        if (idCardInfo.getPhotolength() > 0) {
-            byte[] buf = new byte[WLTService.imgLength];
-            if (1 == WLTService.wlt2Bmp(idCardInfo.getPhoto(), buf)) {
-                final Bitmap cardBmp = IDPhotoHelper.Bgr2Bitmap(buf);
-                if (cardBmp != null) {
-                    synchronized (this) {
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                long start = System.currentTimeMillis();
-                                faceComperFrame(cardBmp);
-                                // System.out.println("人证比对时间:" + (System.currentTimeMillis() - start));
-                                AppData.getAppData().setName(idCardInfo.getName());
-                                AppData.getAppData().setSex(idCardInfo.getSex());
-                                AppData.getAppData().setNation(idCardInfo.getNation());
-                                AppData.getAppData().setBirthday(idCardInfo.getBirth());
-                                AppData.getAppData().setAddress(idCardInfo.getAddress());
-                                AppData.getAppData().setCardNo(idCardInfo.getId());
-                                AppData.getAppData().setCardBmp(cardBmp);
-                                Message msg = new Message();
-                                msg.obj = 5;
-                                msg.what = Const.COMPER_FINIASH;
-                                mHandler.sendMessage(msg);
-                            }
-                        }).start();
-                    }
-                } else {
-                    Log.i(TAG, "读卡器解码得到的图片为空");
-                }
-            } else {
-                Log.i(TAG, "图片解码 error");
-                showToast("身份证图片解码失败");
-            }
-        } else {
-            Log.i(TAG, "图片数据长度为0");
-            showToast("图片数据长度为0" + idCardInfo.getName());
-        }
-    }
-
-
-    /*1：1比对操作*/
-    public void faceComperFrame(Bitmap bmp) {
-        //提取人脸
-        List<AFD_FSDKFace> result = new ArrayList<AFD_FSDKFace>();
-        byte[] des = CameraHelp.rotateCamera(imageStack.pullImageInfo().getData(), 640, 480, 270);
-        MyApplication.mFaceLibCore.FaceDetection(des, 480, 640, result);
-        if (result.size() == 0) {
-            return;
-        }
-
-        AppData.getAppData().setOneFaceBmp(CameraHelp.getFaceImgByInfraredJpg(result.get(0).getRect().left, result.get(0).getRect().top, result.get(0).getRect().right, result.get(0).getRect().bottom, CameraHelp.getBitMap(des)));
-        AFR_FSDKFace face = new AFR_FSDKFace();
-        int ret = MyApplication.mFaceLibCore.FaceFeature(des, 480, 640, result.get(0).getRect(), result.get(0).getDegree(), face);
-        if (ret != 0) {
-            return;
-        }
-        //提取身份证
-        int w = bmp.getWidth() % 2 == 0 ? bmp.getWidth() : bmp.getWidth() - 1;
-        int h = bmp.getHeight() % 2 == 0 ? bmp.getHeight() : bmp.getHeight() - 1;
-        byte[] cardDes = CameraHelp.getNV21(w, h, bmp);
-        List<AFD_FSDKFace> result_card = new ArrayList<AFD_FSDKFace>();
-        MyApplication.mFaceLibCore.FaceDetection(cardDes, w, h, result_card);
-        if (result_card.size() == 0) {
-            return;
-        }
-        AFR_FSDKFace card = new AFR_FSDKFace();
-        ret = MyApplication.mFaceLibCore.FaceFeature(cardDes, w, h, result_card.get(0).getRect(), result_card.get(0).getDegree(), card);
-        if (ret != 0) {
-            return;
-        }
-
-        AFR_FSDKMatching score = new AFR_FSDKMatching();
-        ret = MyApplication.mFaceLibCore.FacePairMatching(face, card, score);
-        if (ret != 0) {
-            return;
-        }
-        // System.out.println("人证分数:" + score.getScore());
-        AppData.getAppData().setoneCompareScore(score.getScore());
-        //  Log.i("Gavin","oneCompareScore:"+AppData.getAppData().getoneCompareScore());
-    }
-
-    private BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                Log.e(TAG, "拔出usb了");
-                UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                if (device != null) {
-                    Log.e(TAG, "设备的ProductId值为：" + device.getProductId());
-                    Log.e(TAG, "设备的VendorId值为：" + device.getVendorId());
-                    if (device.getProductId() == PID && device.getVendorId() == VID) {
-                        bStop = true;
-                        try {
-                            idCardReader.close(0);
-                        } catch (IDCardReaderException e) {
-                            // TODO Auto-generated catch block
-                            Log.i(TAG, "关闭失败");
-                        }
-                        IDCardReaderFactory.destroy(idCardReader);
-                    }
-                }
-            } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
-                Log.e(TAG, "插入usb了");
-                UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                if (device.getProductId() == PID && device.getVendorId() == VID) {
-                    // 读卡器
-                    startIDCardReader();
-                }
-            }
-        }
-    };
-
-    /**
-     * 读卡器初始化
-     */
-    private void startIDCardReader() {
-        LogHelper.setLevel(Log.ASSERT);
-        Map idrparams = new HashMap();
-        idrparams.put(ParameterHelper.PARAM_KEY_VID, VID);
-        idrparams.put(ParameterHelper.PARAM_KEY_PID, PID);
-        idCardReader = IDCardReaderFactory.createIDCardReader(this,
-                TransportType.USB, idrparams);
-        readCard();
-
-    }
-
-
-    private void readCard() {
-        try {
-            idCardReader.open(0);
-            bStop = false;
-            Log.i(TAG, "设备连接成功");
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    while (!bStop) {
-                        long begin = System.currentTimeMillis();
-                        IDCardInfo idCardInfo = new IDCardInfo();
-                        boolean ret = false;
-                        try {
-                            idCardReader.findCard(0);
-                            idCardReader.selectCard(0);
-                        } catch (IDCardReaderException e) {
-                            continue;
-                        }
-                        if (ReaderCardFlag == true) {
-                            try {
-                                ret = idCardReader.readCard(0, 0, idCardInfo);
-                            } catch (IDCardReaderException e) {
-                                Log.i(TAG, "读卡失败，错误信息：" + e.getMessage());
-                            }
-                            if (ret) {
-                                Const.ONE_VS_MORE_TIMEOUT_NUM = 0;
-                                isOpenOneVsMore = false;
-                                ReaderCardFlag = false;
-                                final long nTickUsed = (System.currentTimeMillis() - begin);
-                                Log.i(TAG, "success>>>" + nTickUsed + ",name:" + idCardInfo.getName() + "," + idCardInfo.getValidityTime() + "，" + idCardInfo.getDepart());
-                                Message msg = new Message();
-                                msg.what = Const.READ_CARD;
-                                msg.obj = idCardInfo;
-                                mHandler.sendMessage(msg);
-
-                            }
-                        }
-                    }
-                }
-            }).start();
-        } catch (IDCardReaderException e) {
-            Log.i(TAG, "连接设备失败");
-            Log.i(TAG, "开始读卡失败，错误码：" + e.getErrorCode() + "\n错误信息："
-                    + e.getMessage() + "\n内部代码="
-                    + e.getInternalErrorCode());
-            showToast("连接读卡器失败:" + e.getMessage());
         }
     }
 
