@@ -194,52 +194,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                         }
                     }
 
-                    /*每天重启操作*/
-                    DateFormat df = new SimpleDateFormat("HH:mm:ss");
-                    if (df.format(new Date()).equals("02:00:00")) {
-                        Log.i("zhuhuilong", "data" + df.format(new Date()));
-                        rebootSU();
-                    }
-
-                    /*设置删除数据操作*/
-                    String time1 = TestDate.SGetSysTime();
-                    // String time2=TestDate.getSupportEndDayofMonth(new Date());
-                    if ((df.format(new Date()).equals("00:00:00")) && SysTimeflag == true) {
-                        // TestDate.getTime();
-                        SysTimeflag = false;
-                        Log.i("zhuhuilong", "data" + TestDate.getSupportBeginDayofMonth(new Date()));
-                        Log.i("zhuhuilong", "data" + TestDate.getDateBefore(new Date(), SPUtil.getInt(Const.KEY_PRESERVATION_DAY, 90)));
-                        Log.i("zhuhuilong", "data" + TestDate.getTime(time1));
-                        Log.i("zhuhuilong", "data" + TestDate.timetodate(TestDate.getTime(time1)));
-
-                        String time11 = TestDate.timetodate(TestDate.getTime(time1));
-                        //String time22 = TestDate.timetodate(TestDate.getSupportBeginDayofMonth(new Date()));
-                        String time22 = TestDate.getDateBefore(new Date(), SPUtil.getInt(Const.KEY_PRESERVATION_DAY, 90));
-
-                        if (MyApplication.faceProvider.quaryUserTableRowCount("select count(id) from tUser") != 0) {
-                            Log.i("zhuhuilong", "quaryUserTableRowCount:不为0");
-                            mList = MyApplication.faceProvider.getAllPoints();
-                            Log.i("zhuhuilong", "mList:" + mList.size());
-                            Log.i("zhuhuilong", "mList:" + mList.toArray());
-                            for (int i = 0; i < mList.size(); i++) {
-                                Log.i("zhuhuilong", "mList.get(i).getTime():" + mList.get(i).getTime());
-                                Log.i("zhuhuilong", "mList.get(i).getTime():" + mList.get(i).getId());
-                                if (TimeCompare(time11, time22, TestDate.timetodate(String.valueOf(mList.get(i).getTime()))))//String.valueOf(mList.get(i).getTime())))
-                                {
-                                    List<User> mList1 = MyApplication.faceProvider.queryRecord("select * from tRecord where id=" + (mList.get(i).getId()));
-                                    FileUtils.deleteTempter(mList1.get(0).getTemplateImageID());
-                                    FileUtils.deleteTempter(mList1.get(0).getRecord().getSnapImageID());
-                                    MyApplication.faceProvider.deleteRecord(mList.get(i).getId());
-
-                                    Log.i("zhuhuilong", "mList.get(i).getTime():" + mList1.get(0).getTemplateImageID());
-                                    Log.i("zhuhuilong", "mList.get(i).getTime():" + mList1.get(0).getRecord().getSnapImageID());
-                                    Log.i("zhuhuilong", "true");
-
-                                }
-                            }
-                        }
-                    }
-
                     /*显示逻辑*/
                     if (promptshow_xml.getVisibility() == View.VISIBLE) {
                         oneVsMoreView.setVisibility(View.GONE);
