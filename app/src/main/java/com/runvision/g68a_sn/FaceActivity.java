@@ -27,6 +27,7 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.arcsoft.facedetection.AFD_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKMatching;
@@ -65,6 +66,7 @@ import com.zkteco.android.biometric.module.idcard.IDCardReader;
 import com.zkteco.android.biometric.module.idcard.IDCardReaderFactory;
 import com.zkteco.android.biometric.module.idcard.exception.IDCardReaderException;
 import com.zkteco.android.biometric.module.idcard.meta.IDCardInfo;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -81,6 +83,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import android_serialport_api.SerialPort;
 
 /**
@@ -301,41 +304,8 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                     FaceInfo info = (FaceInfo) msg.obj;
                     openOneVsMoreThread(info);
                     break;
-                case Const.READ_CARD://收到读卡器的信息
-                    mHandler.removeMessages(Const.COMPER_FINIASH);
-                    mHandler.removeMessages(Const.READ_CARD);
-                    mHandler.removeMessages(Const.COMPER_END);
-                    oneVsMoreView.setVisibility(View.GONE);
-                    home_layout.setVisibility(View.GONE);
-                    pro_xml.setVisibility(View.VISIBLE);
-                    IDCardInfo Idinfo = (IDCardInfo) msg.obj;
-                    break;
                 case Const.COMPER_END://1:n比对显示
                     showAlert();
-                    break;
-                case Const.COMPER_FINIASH://身份证比对完显示
-                    mHandler.removeMessages(Const.COMPER_FINIASH);
-                    mHandler.removeMessages(Const.COMPER_END);
-                    oneVsMoreView.setVisibility(View.GONE);
-                    pro_xml.setVisibility(View.GONE);
-                    int count2 = (Integer) msg.obj;
-                    if (count2 > 4) {
-                        pro_xml.setVisibility(View.GONE);
-                        showAlertDialog();
-                        Message msg3 = obtainMessage();
-                        msg3.what = Const.COMPER_FINIASH;
-                        msg3.obj = count2 - 1;
-                        sendMessageDelayed(msg3, 1000);
-                    }
-                    if (count2 > 0) {
-                        Message msg3 = obtainMessage();
-                        msg3.what = Const.COMPER_FINIASH;
-                        msg3.obj = count2 - 1;
-                        sendMessageDelayed(msg3, 1000);
-                    }
-                    if (count2 == 0) {
-                        isOpenOneVsMore = true;
-                    }
                     break;
                 case Const.TEST_INFRA_RED://红外处理
                     int count1 = (Integer) msg.obj;
@@ -374,93 +344,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                     if (count4 == 0) {
                         home_layout.setVisibility(View.VISIBLE);
                         mCameraSurfView.releaseCamera();
-                    }
-                    break;
-                case Const.SOCKET_LOGIN: /*socket设备登陆*/
-                    boolean isSuccess = (boolean) msg.obj;
-                    if (isSuccess) {
-                        Toast.makeText(mContext, "socket登录成功", Toast.LENGTH_SHORT).show();
-                        LogToFile.i("MainActivity", "socket登录成功");
-                        socket_status.setBackgroundResource(R.drawable.socket_true);
-                        //开启心跳
-                        if (heartBeatThread != null) {
-                            heartBeatThread.HeartBeatThread_flag = false;
-                            heartBeatThread = null;
-                        }
-                        heartBeatThread = new HeartBeatThread(socketThread);
-                        heartBeatThread.start();
-                    } else {
-                        socket_status.setBackgroundResource(R.drawable.socket_false);
-                        LogToFile.i("MainActivity", "socket登录失败");
-                        Toast.makeText(mContext, "socket登录失败", Toast.LENGTH_SHORT).show();
-                    }
-                    break;
-                case Const.SOCKET_TIMEOUT:/*socket连接超时*/
-                    socket_status.setBackgroundResource(R.drawable.socket_false);
-                    String prompt = (String) msg.obj;
-                    LogToFile.i("MainActivity", prompt);
-                    Toast.makeText(mContext, prompt, Toast.LENGTH_SHORT).show();
-                    break;
-                case Const.SOCKET_DIDCONNECT:/*socket断开连接*/
-                    socket_status.setBackgroundResource(R.drawable.socket_false);
-                    break;
-                case Const.SOCKRT_SENDIMAGE:/*VMS批量导入操作*/
-                    batchImport();
-                    break;
-                case 101:/*VMS批量导入结束操作*/
-                    int success1 = (int) msg.obj;
-                    bacthOk1 = success1;
-                    double a = (double) success1 / (double) dataList1.size();
-                    int b = (int) (a * 100);
-                    // progesssValue1.setText(success1 + "/" + dataList1.size());
-                    //  progesss1.setProgress(b);
-                    if (bacthOk1 + bacthOk2 + bacthOk3 == mSum) {
-                        // batchDialog.dismiss();
-                        mHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                Const.VMS_TEMPLATE = true;
-                                Const.VMS_BATCH_IMPORT_TEMPLATE = false;
-                            }
-                        }, 2000);
-
-                    }
-                    break;
-                case 102:/*VMS批量导入结束操作*/
-                    int success2 = (int) msg.obj;
-                    bacthOk2 = success2;
-                    double a2 = (double) success2 / (double) dataList2.size();
-                    int b2 = (int) (a2 * 100);
-                    // progesssValue2.setText(success2 + "/" + dataList2.size());
-                    // progesss2.setProgress(b2);
-                    if (bacthOk1 + bacthOk2 + bacthOk3 == mSum) {
-                        // batchDialog.dismiss();
-                        mHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                Const.VMS_TEMPLATE = true;
-                                Const.VMS_BATCH_IMPORT_TEMPLATE = false;
-                            }
-                        }, 2000);
-
-                    }
-                    break;
-                case 103:/*VMS批量导入结束操作*/
-                    int success3 = (int) msg.obj;
-                    bacthOk3 = success3;
-                    double a3 = (double) success3 / (double) dataList3.size();
-                    int b3 = (int) (a3 * 100);
-                    // progesssValue3.setText(success3 + "/" + dataList3.size());
-                    //  progesss3.setProgress(b3);
-                    if (bacthOk1 + bacthOk2 + bacthOk3 == mSum) {
-                        // batchDialog.dismiss();
-                        mHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                Const.VMS_TEMPLATE = true;
-                                Const.VMS_BATCH_IMPORT_TEMPLATE = false;
-                            }
-                        }, 2000);
                     }
                     break;
                 default:
@@ -1104,7 +987,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     }
 
 
-
     /**
      * socket重连接
      *
@@ -1242,7 +1124,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     }
 
 
-
     public void showToast(String text) {
         if (mToast == null) {
             mToast = Toast.makeText(FaceActivity.this, text, Toast.LENGTH_SHORT);
@@ -1360,6 +1241,7 @@ public class FaceActivity extends Activity implements View.OnClickListener {
 
     /**
      * 在java代码中执行adb命令
+     *
      * @param command
      * @return
      */
@@ -1394,9 +1276,9 @@ public class FaceActivity extends Activity implements View.OnClickListener {
 
     //判断网线拔插状态
     //通过命令cat /sys/class/net/eth0/carrier，如果插有网线的话，读取到的值是1，否则为0
-    public boolean isWirePluggedIn(){
-        String state= execCommand("cat /sys/class/net/eth0/carrier");
-        if(state.trim().equals("1")){  //有网线插入时返回1，拔出时返回0
+    public boolean isWirePluggedIn() {
+        String state = execCommand("cat /sys/class/net/eth0/carrier");
+        if (state.trim().equals("1")) {  //有网线插入时返回1，拔出时返回0
             return true;
         }
         return false;
