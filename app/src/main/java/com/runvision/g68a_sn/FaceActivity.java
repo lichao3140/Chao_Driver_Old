@@ -74,7 +74,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     //private ComperThread mComperThread;//1:n比对线程
     private MyRedThread mMyRedThread;//红外线程
     private UIThread uithread;//UI线程
-    private SLecDeviceThread sLecDeviceThread;
 
     //////////////////////////////////////////////////视图控件
     public MyCameraSuf mCameraSurfView;
@@ -144,15 +143,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                                 isOpenOneVsMore = true;
                             }
                         }, 2000);
-                    }
-
-                    /*更新VMS连接*/
-                    if (Const.WEB_UPDATE == true) {
-                        Const.WEB_UPDATE = false;
-                        if (!SPUtil.getString(Const.KEY_VMSIP, "").equals("") && SPUtil.getInt(Const.KEY_VMSPROT, 0) != 0 && !SPUtil.getString(Const.KEY_VMSUSERNAME, "").equals("") && !SPUtil.getString(Const.KEY_VMSPASSWORD, "").equals("")) {
-                            //开启socket线程
-                            socketReconnect(SPUtil.getString(Const.KEY_VMSIP, ""), SPUtil.getInt(Const.KEY_VMSPROT, 0));
-                        }
                     }
 
                     /*显示逻辑*/
@@ -279,7 +269,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
 
         hideBottomUIMenu();
         initView();
-        initRelay();
         mContext = this;
 
         application = (MyApplication) getApplication();
@@ -314,7 +303,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
         mCameraSurfView.releaseCamera();
         //关闭红外
         mMyRedThread.closeredThread();
-        sLecDeviceThread.interrupt();
         if (mMyRedThread != null) {
             mMyRedThread.interrupt();
             mMyRedThread = null;
@@ -381,12 +369,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
 
         //刷卡标记
         pro_xml = findViewById(R.id.pro);
-    }
-
-    private void initRelay() {
-        mSerialPortManager = new SerialPortManager();
-        sLecDeviceThread = new SLecDeviceThread();
-        sLecDeviceThread.start();
     }
 
     /**
@@ -717,27 +699,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
         }
     }
 
-
-    /**
-     * socket重连接
-     *
-     * @param ip
-     * @param port
-     */
-    private void socketReconnect(String ip, int port) {
-        if (socketThread == null) {
-            socketThread = new SocketThread(ip, port, mHandler);
-        } else {
-            socketThread.close();
-            if (heartBeatThread != null) {
-                heartBeatThread.HeartBeatThread_flag = false;
-                heartBeatThread = null;
-            }
-            socketThread = new SocketThread(ip, port, mHandler);
-        }
-        socketThread.start();
-    }
-
     //上传的所有数据长度大小
     private int mSum = 0;
     //切割后的数据
@@ -1004,117 +965,5 @@ public class FaceActivity extends Activity implements View.OnClickListener {
         }
         return stringBuffer.toString();
     }
-
-    //判断网线拔插状态
-    //通过命令cat /sys/class/net/eth0/carrier，如果插有网线的话，读取到的值是1，否则为0
-    public boolean isWirePluggedIn() {
-        String state = execCommand("cat /sys/class/net/eth0/carrier");
-        if (state.trim().equals("1")) {  //有网线插入时返回1，拔出时返回0
-            return true;
-        }
-        return false;
-    }
-
-    private class SLecDeviceThread extends Thread {
-        @Override
-        public void run() {
-            super.run();
-            try {
-                //串口4，继电器控制
-                serialPort4 = mSerialPortManager.getSerialPort4();
-                mInputStream4 = serialPort4.getInputStream();
-                mOutputStream4 = serialPort4.getOutputStream();
-                sleep(500);
-                while (true) {
-                    try {
-                        sleep(50);
-                        byte[] buffer = new byte[64];
-                        if (mInputStream4 == null) {
-                            continue;
-                        }
-                        int size = mInputStream4.read(buffer);
-
-                        if (size < 1) {
-                            continue;
-                        }
-
-                        int len = icCard.length();
-                        Log.e("gzy", "run: " + size + "--" + icCard);
-                        if (len == 0) {
-                            //第一条数据
-                            icCard = SlecProtocol.bytesToHexString2(buffer, size);
-                        } else {
-                            //之前已经有数据
-                            icCard = icCard + SlecProtocol.bytesToHexString2(buffer, size);
-                        }
-                        mHandler.removeCallbacks(cancelCardRunnable);
-                        //200ms没有新的数据就发送
-                        mHandler.postDelayed(cancelCardRunnable, 200);
-
-                    } catch (SecurityException e) {
-                        Log.e("SerialPort", "-----------------SecurityException");
-                    } catch (IOException e) {
-                        Log.e("SerialPort", "-----------------IOException" + e.toString());
-                    } catch (InvalidParameterException e) {
-                        Log.e("SerialPort", "-----------------InvalidParameterException");
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    /**
-     * 退出读卡状态
-     */
-    private Runnable cancelCardRunnable = new Runnable() {
-        @Override
-        public void run() {
-            try {
-                //处理icCard
-                Log.e("gzy", "接收到的串口数据为: " + icCard);
-
-                final byte[] bytes = SlecProtocol.asciiToHex(SlecProtocol.hexToByteArray(icCard));
-                if (bytes.length > 5) {
-                    Log.e("gzy", "接收转换: " + SlecProtocol.bytesToHexString2(bytes, bytes.length) +
-                            "--命令：" + bytes[3] +
-                            "--数据长度：" + bytes[5] +
-                            "--数据：" + (bytes[5] == 0 ? "没有数据" : bytes[6])
-                    );
-                    switch (bytes[3]) {
-                        case 1:
-                            if (bytes[6] == 0) {
-                                Log.e("gzy", "run: 发送开门指令成功");
-                            } else {
-                                Log.e("gzy", "run: 发送开门指令失败");
-                            }
-                            break;
-                        case 2:
-                            //刷卡
-                            //6-9是用户id，10-13是卡号
-                            if (bytes.length > 13) {
-                                final byte[] card = new byte[4];
-                                for (int i = 0; i < card.length; i++) {
-                                    card[i] = bytes[10 + i];
-                                }
-                            }
-                            break;
-                        default:
-                    }
-                }
-                icCard = "";
-            } catch (Exception e2) {
-                e2.printStackTrace();
-                icCard = "";
-            }
-            icCard = "";
-        }
-    };
 
 }
