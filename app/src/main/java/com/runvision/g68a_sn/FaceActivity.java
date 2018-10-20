@@ -114,15 +114,8 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     private int timingnum = 0;
 
     private MyApplication application;
-    //这个按钮是设置或以开关的
-    private NetWorkStateReceiver receiver;
-    private TextView socket_status;
-    //
     private SocketThread socketThread;
     private HeartBeatThread heartBeatThread;
-    private TextView showHttpUrl;
-    private ServerManager serverManager;
-    private int socketErrorNum = 0;
 
     private Dialog dialog = null;
     private int templatenum = 0;
@@ -143,10 +136,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case Const.UPDATE_UI://更新UI
-                    if (!isWirePluggedIn()) {
-                        showHttpUrl.setText("");
-                        //Log.e("lichao", "无网线");
-                    }
 
                     if (Const.DELETETEMPLATE == true) {
                         isOpenOneVsMore = false;
@@ -207,44 +196,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                             SerialPort.Fill_in_light = false;
                             timingnum = 0;
                         }
-                    }
-
-                    /*导入模板显示*/
-                    if ((Const.BATCH_IMPORT_TEMPLATE == true) && (Const.BATCH_FLAG == 1)) {
-                        if (faceDetectTask != null) {
-                            faceDetectTask.isRuning = false;
-                        }
-                        isOpenOneVsMore = false;
-                        Infra_red = false;
-                        if (mMyRedThread != null) {
-                            mMyRedThread.closeredThread();
-                        }
-                        // home_layout.setVisibility(View.VISIBLE);
-                        templatenum = 0;
-                        template++;
-                        Const.BATCH_IMPORT_TEMPLATE = false;
-                        Const.BATCH_FLAG = 2;
-                        showToast("正在导入模板,停止比对！");
-                        // Toast.makeText(mContext, "正在导入模板", Toast.LENGTH_SHORT).show();
-                    }
-                    if ((template >= 5) || (Const.VMS_BATCH_IMPORT_TEMPLATE == true)) {
-                        if (faceDetectTask != null) {
-                            faceDetectTask.isRuning = false;
-                        }
-                        isOpenOneVsMore = false;
-                        Infra_red = false;
-                        if (mMyRedThread != null) {
-                            mMyRedThread.closeredThread();
-                        }
-                        oneVsMoreView.setVisibility(View.GONE);
-                        alert.setVisibility(View.GONE);
-                        home_layout.setVisibility(View.VISIBLE);
-                        ShowPromptMessage("模板批量导入中！", 2);
-                        cancelToast();
-                    }
-
-                    if ((Const.BATCH_IMPORT_TEMPLATE == false) && (Const.BATCH_FLAG == 2)) {
-                        templatenum++;
                     }
 
                     if ((templatenum == 20) || (Const.VMS_TEMPLATE == true)) {
@@ -433,9 +384,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
 
         //刷卡标记
         pro_xml = findViewById(R.id.pro);
-
-        socket_status = findViewById(R.id.socket_status);
-        showHttpUrl = findViewById(R.id.showHttpUrl);
 
         home_set = (ImageView) findViewById(R.id.home_set);
         home_set.setOnClickListener(new View.OnClickListener() {
