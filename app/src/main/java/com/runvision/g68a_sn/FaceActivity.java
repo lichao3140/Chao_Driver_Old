@@ -86,10 +86,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     private ImageView oneVsMore_face, oneVsMore_temper;
     private TextView oneVsMore_userName, oneVsMore_userID, oneVsMore_userType;
 
-    private View alert; //1:1
-    private ImageView faceBmp_view, cardBmp_view, idcard_Bmp, isSuccessComper;
-    private TextView card_name, card_sex, card_nation, name, year, month, day, addr, cardNumber, version;
-
     private View pro_xml;//刷卡标记
 
     public int logshowflag = 0;
@@ -147,19 +143,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                         oneVsMoreView.setVisibility(View.GONE);
                         pro_xml.setVisibility(View.GONE);
                         // home_layout.setVisibility(View.GONE);
-                    }
-                    if (alert.getVisibility() == View.VISIBLE) {
-                        // AppData.getAppData().setCompareScore(0);
-                        home_layout.setVisibility(View.GONE);
-                        oneVsMoreView.setVisibility(View.GONE);
-                        pro_xml.setVisibility(View.GONE);
-                    }
-                    if (home_layout.getVisibility() == View.VISIBLE) {
-                        oneVsMoreView.setVisibility(View.GONE);
-                        // promptshow_xml.setVisibility(View.GONE);
-                        alert.setVisibility(View.GONE);
-                        pro_xml.setVisibility(View.GONE);
-                        Infra_red = false;
                     }
                     if (isOpenOneVsMore == false) {
                         mHandler.removeMessages(Const.COMPER_END);
@@ -230,7 +213,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                     int count4 = (Integer) msg.obj;
                     oneVsMoreView.setVisibility(View.GONE);
                     promptshow_xml.setVisibility(View.GONE);
-                    alert.setVisibility(View.GONE);
                     pro_xml.setVisibility(View.GONE);
                     Infra_red = false;
                     if (count4 > 0) {
@@ -343,22 +325,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
         oneVsMore_userName = oneVsMoreView.findViewById(R.id.onevsmore_userName);
         oneVsMore_userID = oneVsMoreView.findViewById(R.id.onevsmore_userID);
         oneVsMore_userType = oneVsMoreView.findViewById(R.id.onevsmore_userType);
-
-        //1:1
-        alert = findViewById(R.id.alert_xml);
-        faceBmp_view = alert.findViewById(R.id.comperFacebm);
-        cardBmp_view = alert.findViewById(R.id.comperCardbm);
-        idcard_Bmp = alert.findViewById(R.id.cardImage);
-        card_name = alert.findViewById(R.id.name_1);
-        name = alert.findViewById(R.id.userName);
-        card_sex = alert.findViewById(R.id.sex);
-        card_nation = alert.findViewById(R.id.nation);
-        year = alert.findViewById(R.id.year);
-        day = alert.findViewById(R.id.day);
-        month = alert.findViewById(R.id.month);
-        addr = alert.findViewById(R.id.addr);
-        cardNumber = alert.findViewById(R.id.cardNumber);
-        isSuccessComper = alert.findViewById(R.id.isSuccessComper);
 
         //刷卡标记
         pro_xml = findViewById(R.id.pro);
