@@ -41,6 +41,11 @@
 
         <activity
             android:name=".FaceActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".MainActivity"
             android:screenOrientation="portrait" />
 
         <activity android:name=".RegisterActivity"

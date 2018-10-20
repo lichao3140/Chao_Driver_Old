@@ -40,7 +40,7 @@ import android_serialport_api.SerialPort;
 /**
  * 人脸验证
  */
-public class FaceActivity extends Activity implements View.OnClickListener {
+public class FaceActivity extends Activity {
     private static String TAG = FaceActivity.class.getSimpleName();
 
     private Context mContext;
@@ -187,7 +187,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        hideBottomUIMenu();
         initView();
         mContext = this;
 
@@ -200,7 +199,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     @Override
     protected void onResume() {
         super.onResume();
-        hideBottomUIMenu();
 
         if (uithread == null) {
             uithread = new UIThread();
@@ -291,25 +289,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
             oneVsMoreThreadStauts = true;
             OneVsMoreThread thread = new OneVsMoreThread(info);
             thread.start();
-        }
-    }
-
-    /**
-     * 隐藏虚拟按键，并且全屏
-     */
-    @SuppressLint("NewApi")
-    protected void hideBottomUIMenu() {
-        // 隐藏虚拟按键，并且全屏
-        if (Build.VERSION.SDK_INT > 11 && Build.VERSION.SDK_INT < 19) {
-            View v = this.getWindow().getDecorView();
-            v.setSystemUiVisibility(View.GONE);
-        } else if (Build.VERSION.SDK_INT >= 19) {
-            // for new api versions.
-            View decorView = getWindow().getDecorView();
-            int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN;
-            decorView.setSystemUiVisibility(uiOptions);
         }
     }
 
@@ -455,7 +434,7 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                             String fileName = (String) entry.getKey();
                             byte[] mTemplate = (byte[]) entry.getValue();
                             AFR_FSDKFace face3 = new AFR_FSDKFace(mTemplate);
-                            ret = MyApplication.mFaceLibCore.FacePairMatching(face3, face, score);
+                            MyApplication.mFaceLibCore.FacePairMatching(face3, face, score);
                             if (score.getScore() >= fenshu) {
                                 if (user == null) {
                                     user = new User();
@@ -502,7 +481,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                 }
             }
         }
-
     }
 
     /**
@@ -574,14 +552,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                     e.printStackTrace();
                 }
             }
-        }
-    }
-
-    @Override
-    public void onClick(View view) {
-        switch (view.getId()) {
-            default:
-                break;
         }
     }
 
