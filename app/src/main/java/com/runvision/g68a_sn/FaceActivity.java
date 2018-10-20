@@ -3,22 +3,16 @@ package com.runvision.g68a_sn;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.hardware.usb.UsbDevice;
-import android.hardware.usb.UsbManager;
 import android.media.MediaPlayer;
-import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -27,8 +21,6 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.arcsoft.facedetection.AFD_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKMatching;
 import com.runvision.bean.AppData;
@@ -38,7 +30,6 @@ import com.runvision.broadcast.NetWorkStateReceiver;
 import com.runvision.core.Const;
 import com.runvision.db.Record;
 import com.runvision.db.User;
-import com.runvision.frament.DeviceSetFrament;
 import com.runvision.gpio.GPIOHelper;
 import com.runvision.gpio.SlecProtocol;
 import com.runvision.myview.MyCameraSuf;
@@ -47,26 +38,15 @@ import com.runvision.thread.FaceFramTask;
 import com.runvision.thread.HeartBeatThread;
 import com.runvision.thread.SocketThread;
 import com.runvision.utils.CameraHelp;
-import com.runvision.utils.ConversionHelp;
 import com.runvision.utils.DateTimeUtils;
 import com.runvision.utils.FileUtils;
 import com.runvision.utils.IDUtils;
-import com.runvision.utils.LogToFile;
 import com.runvision.utils.SPUtil;
 import com.runvision.utils.SendData;
 import com.runvision.utils.TestDate;
 import com.runvision.webcore.ServerManager;
 import com.wits.serialport.SerialPortManager;
-import com.zkteco.android.IDReader.IDPhotoHelper;
-import com.zkteco.android.IDReader.WLTService;
-import com.zkteco.android.biometric.core.device.ParameterHelper;
-import com.zkteco.android.biometric.core.device.TransportType;
-import com.zkteco.android.biometric.core.utils.LogHelper;
 import com.zkteco.android.biometric.module.idcard.IDCardReader;
-import com.zkteco.android.biometric.module.idcard.IDCardReaderFactory;
-import com.zkteco.android.biometric.module.idcard.exception.IDCardReaderException;
-import com.zkteco.android.biometric.module.idcard.meta.IDCardInfo;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -80,10 +60,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import android_serialport_api.SerialPort;
 
 /**
@@ -136,13 +114,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
     private int timingnum = 0;
 
     private MyApplication application;
-    // -----------------------------------读卡器参数-------------------------------------------
-    private static final int VID = 1024; // IDR VID
-    private static final int PID = 50010; // IDR PID
-    private IDCardReader idCardReader = null;
-    private boolean ReaderCardFlag = true;
-
-    // ------------------------------这个按钮是设置或以开关的----------------------------------
     //这个按钮是设置或以开关的
     private NetWorkStateReceiver receiver;
     private TextView socket_status;
@@ -251,7 +222,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                         // home_layout.setVisibility(View.VISIBLE);
                         templatenum = 0;
                         template++;
-                        ReaderCardFlag = false;
                         Const.BATCH_IMPORT_TEMPLATE = false;
                         Const.BATCH_FLAG = 2;
                         showToast("正在导入模板,停止比对！");
@@ -266,10 +236,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                         if (mMyRedThread != null) {
                             mMyRedThread.closeredThread();
                         }
-                        // home_layout.setVisibility(View.VISIBLE);
-                        // templatenum=0;
-                        // template++;
-                        ReaderCardFlag = false;
                         oneVsMoreView.setVisibility(View.GONE);
                         alert.setVisibility(View.GONE);
                         home_layout.setVisibility(View.VISIBLE);
@@ -286,7 +252,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
                         Log.i("Gavin_debug", "templatenum==20");
                         promptshow_xml.setVisibility(View.GONE);
                         cancelToast();
-                        ReaderCardFlag = true;//1:1
                         isOpenOneVsMore = true;//1:n
                         if (faceDetectTask != null) {
                             faceDetectTask.isRuning = true;//人脸框
@@ -744,7 +709,6 @@ public class FaceActivity extends Activity implements View.OnClickListener {
             }
         }
         if (AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE) && AppData.getAppData().getOneFaceBmp() != null) {
-//            Log.i("Gavin","人证成功："+socketThread.toString());
             if (socketThread != null) {
                 SendData.sendComperMsgInfo(socketThread, true, Const.TYPE_CARD);
             } else {
@@ -753,15 +717,11 @@ public class FaceActivity extends Activity implements View.OnClickListener {
         }
 
         AppData.getAppData().setoneCompareScore(0);
-        ReaderCardFlag = true;
-        //ReaderCardFlag = true;
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                // AppData.getAppData().setOneFaceBmp(null);
                 oneVsMoreView.setVisibility(View.GONE);
                 alert.setVisibility(View.GONE);
-                // isOpenOneVsMore = true;
             }
         }, 2000);
     }
