@@ -173,22 +173,22 @@ public class FaceLibCore {
             //Log.i("lichao", "startLiveness: errorcode " + livenessError.getCode());
             if (livenessError.getCode() == ErrorInfo.MOK) {
                 if (livenessInfos.size() == 0) {
-                    Log.e("lichao", "无人脸");
+//                    Log.e("lichao", "无人脸");
                     return false;
                 }
                 final int liveness = livenessInfos.get(0).getLiveness();
                 //Log.i("lichao", "getLivenessScore: liveness " + liveness);
                 if (liveness == LivenessInfo.NOT_LIVE) {
-                    Log.e("lichao", "非活体");
+//                    Log.e("lichao", "非活体");
                     return false;
                 } else if (liveness == LivenessInfo.LIVE) {
-                    Log.e("lichao", "活体");
+//                    Log.e("lichao", "活体");
                     return true;
                 } else if (liveness == LivenessInfo.MORE_THAN_ONE_FACE) {
-                    Log.e("lichao", "非单人脸信息");
+//                    Log.e("lichao", "非单人脸信息");
                     return false;
                 } else {
-                    Log.e("lichao", "未知");
+//                    Log.e("lichao", "未知");
                     return false;
                 }
             }

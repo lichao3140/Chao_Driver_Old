@@ -3,6 +3,7 @@ package com.runvision.g68a_sn;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
@@ -183,17 +184,16 @@ public class FaceActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_face);
+
         // 全屏代码
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         initView();
         mContext = this;
-
         application = (MyApplication) getApplication();
         application.init();
         application.addActivity(this);
-
     }
 
     @Override
@@ -224,12 +224,6 @@ public class FaceActivity extends Activity {
         if (mMyRedThread != null) {
             mMyRedThread.interrupt();
             mMyRedThread = null;
-        }
-        //关闭人脸框线程
-        if (faceDetectTask != null) {
-            faceDetectTask.setRuning(false);
-            faceDetectTask.cancel(false);
-            faceDetectTask = null;
         }
         //关闭未播报完语音
         if (mPlayer != null) {
@@ -374,8 +368,11 @@ public class FaceActivity extends Activity {
                     @Override
                     public void run() {
                         oneVsMoreView.setVisibility(View.GONE);
+                        Intent intent = new Intent(mContext, MainActivity.class);
+                        startActivity(intent);
+                        application.removeActivity(FaceActivity.this);
                     }
-                }, 1000);
+                }, 2000);
 
             } else if (AppData.getAppData().getCompareScore() != 0) {
                 Const.ONE_VS_MORE_TIMEOUT_NUM++;

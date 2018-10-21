@@ -164,6 +164,7 @@ public class MainActivity extends Activity implements NetWorkStateReceiver.INetS
     /**
      * 消息响应
      */
+    @SuppressLint("HandlerLeak")
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {

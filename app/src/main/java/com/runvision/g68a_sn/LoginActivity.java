@@ -18,6 +18,7 @@ import android.text.TextWatcher;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.widget.EditText;
@@ -105,6 +106,9 @@ public class LoginActivity extends FragmentActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        // 全屏代码
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         ButterKnife.bind(this);
         screenHeight = this.getResources().getDisplayMetrics().heightPixels; //获取屏幕高度
         keyHeight = screenHeight / 3;//弹起高度为屏幕高度的1/3
@@ -313,7 +317,7 @@ public class LoginActivity extends FragmentActivity {
         Bitmap faceBitmap = BitmapFactory.decodeByteArray(decode, 0, decode.length);
 
         if (faceSP.getSharedPreference("face", "").equals(faceInfo)) {
-            Intent intent = new Intent(mContext, FaceActivity.class);
+            Intent intent = new Intent(mContext, MainActivity.class);
             startActivity(intent);
             finish();
             Toasty.success(mContext, getString(R.string.toast_login_success), Toast.LENGTH_SHORT, true).show();
@@ -321,7 +325,7 @@ public class LoginActivity extends FragmentActivity {
             if (mSaveTemplate(faceBitmap, imageID)) {
                 User user = new User(userName, "白名单", "1", Integer.parseInt(userage), userPhone, useridnum, imageID, DateTimeUtils.getTime());
                 MyApplication.faceProvider.addUserOutId(user);
-                Intent intent = new Intent(mContext, FaceActivity.class);
+                Intent intent = new Intent(mContext, MainActivity.class);
                 startActivity(intent);
                 finish();
                 Toasty.success(mContext, getString(R.string.toast_login_success), Toast.LENGTH_SHORT, true).show();
