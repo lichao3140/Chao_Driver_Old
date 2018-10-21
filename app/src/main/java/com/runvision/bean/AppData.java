@@ -26,15 +26,12 @@ public class AppData {
     private Bitmap onefacebmp;
     private Bitmap nfaceBmp=null;
 
-/////////////////////////////////////////////////////////////////////////////////////
-
     private String facepicName;
 
     private User user;
 
     private String updatedeviceip;
 
-///////////////////////////////////////////////////////////////////
     private int flag=0;
 
     public int getFlag() {
@@ -59,8 +56,6 @@ public class AppData {
         this.user = user;
     }
 
-///////////////////////////////////////////////////////////////////////////////////////
-
     public Bitmap getNFaceBmp() {
         return nfaceBmp;
     }
@@ -77,7 +72,6 @@ public class AppData {
         this.onefacebmp = onefacebmp;
     }
 
-///////////////////////////////////////////////////////////////////////////////////////
     public Bitmap getFaceBmp() {
         return faceBmp;
     }
@@ -170,7 +164,42 @@ public class AppData {
         this.updatedeviceip = updatedeviceip;
     }
 
+    private String instarttime="08:00:00";//签到开始时间
+    private String inendtime="12:00:00";//签到结束时间
+    private String outstarttime="14:00:00";//签退开始时间
+    private String outendtime="18:00:00";//签退结束时间
 
+    public String getInstarttime() {
+        return instarttime;
+    }
+
+    public void setInstarttime(String instarttime) {
+        this.instarttime = instarttime;
+    }
+
+    public String getInendtime() {
+        return inendtime;
+    }
+
+    public void setInendtime(String inendtime) {
+        this.inendtime = inendtime;
+    }
+
+    public String getOutstarttime() {
+        return outstarttime;
+    }
+
+    public void setOutstarttime(String outstarttime) {
+        this.outstarttime = outstarttime;
+    }
+
+    public String getOutendtime() {
+        return outendtime;
+    }
+
+    public void setOutendtime(String outendtime) {
+        this.outendtime = outendtime;
+    }
 }
 
 
