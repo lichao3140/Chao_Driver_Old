@@ -1250,7 +1250,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             case R.id.nav_sign:
                 break;
             case R.id.nav_exit:
-                finish();
+                application.finishActivity();
                 break;
             case R.id.nav_about:
                 new CircleDialog.Builder()
