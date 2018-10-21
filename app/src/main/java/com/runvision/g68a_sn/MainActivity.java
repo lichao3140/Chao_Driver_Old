@@ -19,9 +19,14 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -34,6 +39,7 @@ import android.widget.Toast;
 import com.arcsoft.facedetection.AFD_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKMatching;
+import com.mylhyl.circledialog.CircleDialog;
 import com.runvision.bean.AppData;
 import com.runvision.bean.FaceInfo;
 import com.runvision.bean.ImageStack;
@@ -87,7 +93,8 @@ import java.util.List;
 import java.util.Map;
 import android_serialport_api.SerialPort;
 
-public class MainActivity extends Activity implements NetWorkStateReceiver.INetStatusListener, View.OnClickListener {
+public class MainActivity extends BaseActivity implements NetWorkStateReceiver.INetStatusListener,
+        View.OnClickListener, NavigationView.OnNavigationItemSelectedListener {
     private static String TAG = MainActivity.class.getSimpleName();
 
     private Context mContext;
@@ -112,6 +119,8 @@ public class MainActivity extends Activity implements NetWorkStateReceiver.INetS
     private TextView card_name, card_sex, card_nation, name, year, month, day, addr, cardNumber, version;
 
     private ImageView home_set;
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
 
     private View pro_xml;//刷卡标记
 
@@ -635,6 +644,11 @@ public class MainActivity extends Activity implements NetWorkStateReceiver.INetS
         imageStack = mCameraSurfView.getImgStack();
         home_layout = (RelativeLayout) findViewById(R.id.home_layout);//待机界面
 
+        drawerLayout = findViewById(R.id.drawer);
+        navigationView = findViewById(R.id.navigation);
+        navigationView.setNavigationItemSelectedListener(this);
+        navigationView.setItemIconTintList(null);//显示图片原始样式
+
         // 提示框
         promptshow_xml = findViewById(R.id.promptshow_xml);
         loadprompt = (TextView) promptshow_xml.findViewById(R.id.loadprompt);
@@ -669,13 +683,10 @@ public class MainActivity extends Activity implements NetWorkStateReceiver.INetS
         socket_status = findViewById(R.id.socket_status);
         showHttpUrl = findViewById(R.id.showHttpUrl);
 
-        home_set = (ImageView) findViewById(R.id.home_set);
-        home_set.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                showConfirmPsdDialog();
-//                startActivity(new Intent(MainActivity.this, RegisterActivity.class));
-            }
+        home_set = findViewById(R.id.home_set);
+        home_set.setOnClickListener(view -> {
+            showConfirmPsdDialog();
+            startActivity(new Intent(MainActivity.this, RegisterActivity.class));
         });
     }
 
@@ -1198,6 +1209,36 @@ public class MainActivity extends Activity implements NetWorkStateReceiver.INetS
         }
         mPlayer = MediaPlayer.create(mContext, msuicID);
         mPlayer.start();
+    }
+
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+        int id = menuItem.getItemId();
+        switch (id) {
+            case R.id.nav_setting:
+//                settingTimeDialog();
+                break;
+            case R.id.nav_config:
+//                Atndquery();
+                break;
+            case R.id.nav_sign:
+                break;
+            case R.id.nav_exit:
+                finish();
+                break;
+            case R.id.nav_about:
+                new CircleDialog.Builder()
+                        .setTitle("技术支持")
+                        .setText("深圳市元视科技有限公司")
+                        .setPositive("确定", null)
+                        .show(getSupportFragmentManager());
+                break;
+            default:
+                drawerLayout.closeDrawers();
+                break;
+        }
+        drawerLayout.closeDrawer(GravityCompat.START);
+        return false;
     }
 
     /**

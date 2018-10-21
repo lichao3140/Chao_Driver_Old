@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:app="http://schemas.android.com/apk/res-auto"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                tools:context="com.runvision.g68a_sn.MainActivity">
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.runvision.g68a_sn.MainActivity">
 
     <FrameLayout
         android:id="@+id/index"
@@ -14,16 +15,16 @@
         <com.runvision.myview.MyCameraSuf
             android:id="@+id/myCameraView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent" />
 
         <ImageView
             android:id="@+id/home_set"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/x320"
             android:layout_marginEnd="@dimen/x3"
+            android:layout_marginStart="@dimen/x320"
             android:layout_marginTop="@dimen/x3"
-            android:src="@mipmap/reg"/>
+            android:src="@mipmap/reg" />
     </FrameLayout>
 
     <RelativeLayout
@@ -41,7 +42,7 @@
             android:layout_alignParentBottom="true"
             android:layout_alignParentEnd="true"
             android:layout_marginBottom="10dp"
-            android:layout_marginEnd="10dp"/>
+            android:layout_marginEnd="10dp" />
 
     </RelativeLayout>
 
@@ -50,6 +51,7 @@
         android:layout_width="@dimen/x5"
         android:layout_height="@dimen/y5"
         android:layout_alignParentEnd="true"
+        android:visibility="gone"
         android:background="@drawable/socket_false" />
 
     <TextView
@@ -85,5 +87,15 @@
         layout="@layout/showprompt"
         android:visibility="gone" />
 
+    <android.support.design.widget.NavigationView
+        android:id="@+id/navigation"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@color/white"
+        app:headerLayout="@layout/head"
+        app:menu="@menu/view_menu">
 
-</RelativeLayout>
+    </android.support.design.widget.NavigationView>
+
+</android.support.v4.widget.DrawerLayout>
