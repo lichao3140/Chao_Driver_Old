@@ -111,6 +111,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import android_serialport_api.SerialPort;
 import es.dmoral.toasty.Toasty;
 import okhttp3.Call;
@@ -190,6 +193,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     private int template = 0;
     private Toast mToast;
     private Boolean SysTimeflag = true;
+    private Timer timer;
     List<User> mList;
 
     private TimePickerDialog mDialogHourMinute;
@@ -239,38 +243,20 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
 
                     /*设置删除数据操作*/
                     String time1 = TestDate.SGetSysTime();
-                    // String time2=TestDate.getSupportEndDayofMonth(new Date());
                     if ((df.format(new Date()).equals("00:00:00")) && SysTimeflag == true) {
-                        // TestDate.getTime();
                         SysTimeflag = false;
-                        Log.i("zhuhuilong", "data" + TestDate.getSupportBeginDayofMonth(new Date()));
-                        Log.i("zhuhuilong", "data" + TestDate.getDateBefore(new Date(), SPUtil.getInt(Const.KEY_PRESERVATION_DAY, 90)));
-                        Log.i("zhuhuilong", "data" + TestDate.getTime(time1));
-                        Log.i("zhuhuilong", "data" + TestDate.timetodate(TestDate.getTime(time1)));
 
                         String time11 = TestDate.timetodate(TestDate.getTime(time1));
-                        //String time22 = TestDate.timetodate(TestDate.getSupportBeginDayofMonth(new Date()));
                         String time22 = TestDate.getDateBefore(new Date(), SPUtil.getInt(Const.KEY_PRESERVATION_DAY, 90));
 
                         if (MyApplication.faceProvider.quaryUserTableRowCount("select count(id) from tUser") != 0) {
-                            Log.i("zhuhuilong", "quaryUserTableRowCount:不为0");
                             mList = MyApplication.faceProvider.getAllPoints();
-                            Log.i("zhuhuilong", "mList:" + mList.size());
-                            Log.i("zhuhuilong", "mList:" + mList.toArray());
                             for (int i = 0; i < mList.size(); i++) {
-                                Log.i("zhuhuilong", "mList.get(i).getTime():" + mList.get(i).getTime());
-                                Log.i("zhuhuilong", "mList.get(i).getTime():" + mList.get(i).getId());
-                                if (TimeCompare(time11, time22, TestDate.timetodate(String.valueOf(mList.get(i).getTime()))))//String.valueOf(mList.get(i).getTime())))
-                                {
+                                if (TimeCompare(time11, time22, TestDate.timetodate(String.valueOf(mList.get(i).getTime())))) {
                                     List<User> mList1 = MyApplication.faceProvider.queryRecord("select * from tRecord where id=" + (mList.get(i).getId()));
                                     FileUtils.deleteTempter(mList1.get(0).getTemplateImageID());
                                     FileUtils.deleteTempter(mList1.get(0).getRecord().getSnapImageID());
                                     MyApplication.faceProvider.deleteRecord(mList.get(i).getId());
-
-                                    Log.i("zhuhuilong", "mList.get(i).getTime():" + mList1.get(0).getTemplateImageID());
-                                    Log.i("zhuhuilong", "mList.get(i).getTime():" + mList1.get(0).getRecord().getSnapImageID());
-                                    Log.i("zhuhuilong", "true");
-
                                 }
                             }
                         }
@@ -382,13 +368,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                     if (Const.UPDATE_IP == true) {
                         int returndate = DeviceSetFrament.updateSetting(AppData.getAppData().getUpdatedeviceip(), mContext);
                         if (returndate == 3) {
-                            mHandler.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    openHttpServer();
-                                }
-
-                            }, 3000);
+                            mHandler.postDelayed(() -> openHttpServer(), 3000);
                         }
                         Const.UPDATE_IP = false;
                     }
