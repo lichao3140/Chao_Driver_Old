@@ -65,6 +65,7 @@ import com.runvision.frament.DeviceSetFrament;
 import com.runvision.gpio.GPIOHelper;
 import com.runvision.gpio.SlecProtocol;
 import com.runvision.myview.MyCameraSuf;
+import com.runvision.service.ProximityService;
 import com.runvision.thread.BatchImport;
 import com.runvision.thread.FaceFramTask;
 import com.runvision.thread.HeartBeatThread;
@@ -119,7 +120,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     private static String TAG = MainActivity.class.getSimpleName();
 
     private Context mContext;
-    //private ComperThread mComperThread;//1:n比对线程
+    private Intent intentService;
     private MyRedThread mMyRedThread;//红外线程
     private UIThread uithread;//UI线程
     private SLecDeviceThread sLecDeviceThread;
@@ -207,17 +208,13 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                 case Const.UPDATE_UI://更新UI
                     if (!isWirePluggedIn()) {
                         showHttpUrl.setText("");
-                        //Log.e("lichao", "无网线");
                     }
 
                     if (Const.DELETETEMPLATE == true) {
                         isOpenOneVsMore = false;
-                        mHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                Const.DELETETEMPLATE = false;
-                                isOpenOneVsMore = true;
-                            }
+                        mHandler.postDelayed(() -> {
+                            Const.DELETETEMPLATE = false;
+                            isOpenOneVsMore = true;
                         }, 2000);
                     }
 
@@ -588,6 +585,9 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         application.init();
         application.addActivity(this);
 
+        intentService = new Intent(mContext, ProximityService.class);
+        startService(intentService);
+
         openNetStatusReceiver();
         openSocket();
     }
@@ -603,6 +603,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         usbDeviceStateFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
         registerReceiver(mUsbReceiver, usbDeviceStateFilter);
         startIDCardReader();
+        startService(intentService);
 
         if (uithread == null) {
             uithread = new UIThread();
@@ -627,6 +628,8 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         //关闭红外
         mMyRedThread.closeredThread();
         sLecDeviceThread.interrupt();
+        stopService(intentService);
+
         if (mMyRedThread != null) {
             mMyRedThread.interrupt();
             mMyRedThread = null;
@@ -689,19 +692,19 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
 
         //1:1
         alert = findViewById(R.id.alert_xml);
-        faceBmp_view = (ImageView) alert.findViewById(R.id.comperFacebm);
-        cardBmp_view = (ImageView) alert.findViewById(R.id.comperCardbm);
-        idcard_Bmp = (ImageView) alert.findViewById(R.id.cardImage);
-        card_name = (TextView) alert.findViewById(R.id.name_1);
-        name = (TextView) alert.findViewById(R.id.userName);
-        card_sex = (TextView) alert.findViewById(R.id.sex);
-        card_nation = (TextView) alert.findViewById(R.id.nation);
-        year = (TextView) alert.findViewById(R.id.year);
-        day = (TextView) alert.findViewById(R.id.day);
-        month = (TextView) alert.findViewById(R.id.month);
-        addr = (TextView) alert.findViewById(R.id.addr);
-        cardNumber = (TextView) alert.findViewById(R.id.cardNumber);
-        isSuccessComper = (ImageView) alert.findViewById(R.id.isSuccessComper);
+        faceBmp_view = alert.findViewById(R.id.comperFacebm);
+        cardBmp_view = alert.findViewById(R.id.comperCardbm);
+        idcard_Bmp = alert.findViewById(R.id.cardImage);
+        card_name = alert.findViewById(R.id.name_1);
+        name = alert.findViewById(R.id.userName);
+        card_sex = alert.findViewById(R.id.sex);
+        card_nation = alert.findViewById(R.id.nation);
+        year = alert.findViewById(R.id.year);
+        day = alert.findViewById(R.id.day);
+        month = alert.findViewById(R.id.month);
+        addr = alert.findViewById(R.id.addr);
+        cardNumber = alert.findViewById(R.id.cardNumber);
+        isSuccessComper = alert.findViewById(R.id.isSuccessComper);
 
         //刷卡标记
         pro_xml = findViewById(R.id.pro);
@@ -712,7 +715,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         home_set = findViewById(R.id.home_set);
         home_set.setOnClickListener(view -> {
             showConfirmPsdDialog();
-            startActivity(new Intent(MainActivity.this, RegisterActivity.class));
         });
     }
 
@@ -1024,12 +1026,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
 
                 oneVsMoreView.setVisibility(View.VISIBLE);
                 playMusic(R.raw.success);
-                mHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        oneVsMoreView.setVisibility(View.GONE);
-                    }
-                }, 1000);
+                mHandler.postDelayed(() -> oneVsMoreView.setVisibility(View.GONE), 1000);
 
 
                 if (socketThread != null) {
@@ -1043,6 +1040,9 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         }
     }
 
+    /**
+     * 设置密码框
+     */
     private void showConfirmPsdDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         final AlertDialog dialog = builder.create();
@@ -1053,32 +1053,24 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         Button bt_submit = view.findViewById(R.id.bt_submit);
         Button bt_cancel = view.findViewById(R.id.bt_cancel);
 
-        bt_submit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                EditText et_confirm_psd = view.findViewById(R.id.et_confirm_psd);
-                String confirmPsd = et_confirm_psd.getText().toString();
-                String psd = Const.MOBILE_SAFE_PSD;
-                if(!TextUtils.isEmpty(confirmPsd)){
-                    if(psd.equals(confirmPsd)) {
-                        Intent intent = new Intent(getApplicationContext(), RegisterActivity.class);
-                        startActivity(intent);
-                        dialog.dismiss();
-                    } else {
-                        showToast("输入密码错误");
-                    }
-                }else{
-                    showToast("请输入密码");
+        bt_submit.setOnClickListener(v -> {
+            EditText et_confirm_psd = view.findViewById(R.id.et_confirm_psd);
+            String confirmPsd = et_confirm_psd.getText().toString();
+            String psd = Const.MOBILE_SAFE_PSD;
+            if(!TextUtils.isEmpty(confirmPsd)){
+                if(psd.equals(confirmPsd)) {
+                    Intent intent = new Intent(getApplicationContext(), RegisterActivity.class);
+                    startActivity(intent);
+                    dialog.dismiss();
+                } else {
+                    showToast("输入密码错误");
                 }
+            }else{
+                showToast("请输入密码");
             }
         });
 
-        bt_cancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                dialog.dismiss();
-            }
-        });
+        bt_cancel.setOnClickListener(view1 -> dialog.dismiss());
     }
 
     /**
@@ -1190,7 +1182,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         }
 
         if (AppData.getAppData().getoneCompareScore() < SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE) && AppData.getAppData().getOneFaceBmp() != null) {
-            //    Log.i("Gavin","人证失败："+socketThread.toString());
             if (socketThread != null) {
                 SendData.sendComperMsgInfo(socketThread, false, Const.TYPE_CARD);
             } else {
@@ -1198,7 +1189,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             }
         }
         if (AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE) && AppData.getAppData().getOneFaceBmp() != null) {
-//            Log.i("Gavin","人证成功："+socketThread.toString());
             if (socketThread != null) {
                 SendData.sendComperMsgInfo(socketThread, true, Const.TYPE_CARD);
             } else {
@@ -1208,15 +1198,11 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
 
         AppData.getAppData().setoneCompareScore(0);
         ReaderCardFlag = true;
-        //ReaderCardFlag = true;
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                // AppData.getAppData().setOneFaceBmp(null);
-                oneVsMoreView.setVisibility(View.GONE);
-                alert.setVisibility(View.GONE);
-                // isOpenOneVsMore = true;
-            }
+        mHandler.postDelayed(() -> {
+            // AppData.getAppData().setOneFaceBmp(null);
+            oneVsMoreView.setVisibility(View.GONE);
+            alert.setVisibility(View.GONE);
+            // isOpenOneVsMore = true;
         }, 2000);
     }
 
@@ -1224,7 +1210,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     /**
      * 播放语音
      */
-    public void playMusic(int msuicID) {
+    public void playMusic(int musicID) {
         if (!SPUtil.getBoolean(Const.KEY_ISOPENMUSIC, Const.OPEN_MUSIC)) {
             return;
         }
@@ -1233,7 +1219,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                 mPlayer.release();
             }
         }
-        mPlayer = MediaPlayer.create(mContext, msuicID);
+        mPlayer = MediaPlayer.create(mContext, musicID);
         mPlayer.start();
     }
 
@@ -1314,6 +1300,9 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                 .show(getSupportFragmentManager());
     }
 
+    /**
+     * 显示小时 - 分钟
+     */
     private void showTimeHoursMin() {
         mDialogHourMinute = new TimePickerDialog.Builder()
                 .setTitleStringId("选择时间")
@@ -1883,6 +1872,9 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     private com.wits.serialport.SerialPort serialPort4;
     private String icCard = "";
 
+    /**
+     * G69A串口控制
+     */
     public void openRelay() {
         if (mOutputStream4 == null) {
             showToast("请先打开串口");
@@ -2006,52 +1998,49 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     /**
      * 退出读卡状态
      */
-    private Runnable cancelCardRunnable = new Runnable() {
-        @Override
-        public void run() {
-            try {
-                //处理icCard
-                Log.e("gzy", "接收到的串口数据为: " + icCard);
+    private Runnable cancelCardRunnable = () -> {
+        try {
+            //处理icCard
+            Log.e("gzy", "接收到的串口数据为: " + icCard);
 
-                final byte[] bytes = SlecProtocol.asciiToHex(SlecProtocol.hexToByteArray(icCard));
-                if (bytes.length > 5) {
-                    Log.e("gzy", "接收转换: " + SlecProtocol.bytesToHexString2(bytes, bytes.length) +
-                            "--命令：" + bytes[3] +
-                            "--数据长度：" + bytes[5] +
-                            "--数据：" + (bytes[5] == 0 ? "没有数据" : bytes[6])
-                    );
-                    switch (bytes[3]) {
-                        case 1:
-                            if (bytes[6] == 0) {
-                                Log.e("gzy", "run: 发送开门指令成功");
-                            } else {
-                                Log.e("gzy", "run: 发送开门指令失败");
+            final byte[] bytes = SlecProtocol.asciiToHex(SlecProtocol.hexToByteArray(icCard));
+            if (bytes.length > 5) {
+                Log.e("gzy", "接收转换: " + SlecProtocol.bytesToHexString2(bytes, bytes.length) +
+                        "--命令：" + bytes[3] +
+                        "--数据长度：" + bytes[5] +
+                        "--数据：" + (bytes[5] == 0 ? "没有数据" : bytes[6])
+                );
+                switch (bytes[3]) {
+                    case 1:
+                        if (bytes[6] == 0) {
+                            Log.e("gzy", "run: 发送开门指令成功");
+                        } else {
+                            Log.e("gzy", "run: 发送开门指令失败");
+                        }
+                        break;
+                    case 2:
+                        //刷卡
+                        //6-9是用户id，10-13是卡号
+                        if (bytes.length > 13) {
+                            final byte[] card = new byte[4];
+                            for (int i = 0; i < card.length; i++) {
+                                card[i] = bytes[10 + i];
                             }
-                            break;
-                        case 2:
-                            //刷卡
-                            //6-9是用户id，10-13是卡号
-                            if (bytes.length > 13) {
-                                final byte[] card = new byte[4];
-                                for (int i = 0; i < card.length; i++) {
-                                    card[i] = bytes[10 + i];
-                                }
-                            }
-                            break;
-                        default:
-                    }
+                        }
+                        break;
+                    default:
                 }
-                icCard = "";
-            } catch (Exception e2) {
-                e2.printStackTrace();
-                icCard = "";
             }
             icCard = "";
+        } catch (Exception e2) {
+            e2.printStackTrace();
+            icCard = "";
         }
+        icCard = "";
     };
 
     /**
-     * 考勤参数
+     * 网络请求考勤参数
      */
     public void Atndquery() {
         try {
@@ -2095,6 +2084,10 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         }
     }
 
+    /**
+     * 显示获取的网络请求应答数据
+     * @param coursData
+     */
     private void showInfo(String coursData) {
         try {
             Gson gson = new Gson();
@@ -2138,6 +2131,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         return super.onKeyDown(keyCode, event);
     }
 
+    /**  返回退出 */
     private int time = 30;
     private DialogFragment dialogFragment;
     private Handler handler;
