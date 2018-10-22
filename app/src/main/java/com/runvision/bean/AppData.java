@@ -32,6 +32,8 @@ public class AppData {
 
     private String updatedeviceip;
 
+    private boolean admin_login_flag = false;
+
     private int flag=0;
 
     public int getFlag() {
@@ -199,6 +201,14 @@ public class AppData {
 
     public void setOutendtime(String outendtime) {
         this.outendtime = outendtime;
+    }
+
+    public boolean getAdmin_login_flag() {
+        return admin_login_flag;
+    }
+
+    public void setAdmin_login_flag(boolean admin_login_flag) {
+        this.admin_login_flag = admin_login_flag;
     }
 }
 

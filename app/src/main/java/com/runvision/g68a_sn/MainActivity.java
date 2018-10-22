@@ -49,6 +49,7 @@ import com.jzxiang.pickerview.TimePickerDialog;
 import com.jzxiang.pickerview.data.Type;
 import com.jzxiang.pickerview.listener.OnDateSetListener;
 import com.mylhyl.circledialog.CircleDialog;
+import com.runvision.HttpCallback.HttpAdmin;
 import com.runvision.adapter.CheckedAdapter;
 import com.runvision.adapter.PictureTypeEntity;
 import com.runvision.bean.AppData;
@@ -162,6 +163,8 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     private ImageStack imageStack;
 
     public boolean comparisonEnd = false;
+    //管理员是否登录成功
+    public boolean admin_is_login = AppData.getAppData().getAdmin_login_flag();
     private int timingnum = 0;
 
     private MyApplication application;
@@ -614,6 +617,12 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             mMyRedThread = new MyRedThread();  //红外
             mMyRedThread.start();
         }
+
+        if (admin_is_login) {
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);//打开手势滑动
+        } else {
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);//关闭手势滑动
+        }
         mMyRedThread.startredThread();
         isOpenOneVsMore = true;
         // Log.i("Gavin","mList:"+MyApplication.mList.size());
@@ -659,6 +668,16 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     }
 
     @Override
+    protected void onRestart() {
+        if (admin_is_login) {
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);//打开手势滑动
+        } else {
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);//关闭手势滑动
+        }
+        super.onRestart();
+    }
+
+    @Override
     protected void onDestroy() {
         MyApplication.mFaceLibCore.UninitialAllEngine();
         mSerialPortManager.closeSerialPort4();
@@ -674,6 +693,11 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         home_layout = (RelativeLayout) findViewById(R.id.home_layout);//待机界面
 
         drawerLayout = findViewById(R.id.drawer);
+        if (admin_is_login) {
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);//打开手势滑动
+        } else {
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);//关闭手势滑动
+        }
         navigationView = findViewById(R.id.navigation);
         navigationView.setNavigationItemSelectedListener(this);
         navigationView.setItemIconTintList(null);//显示图片原始样式
@@ -741,7 +765,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
      * 开启一个1：N的线程
      */
     private void openOneVsMoreThread(FaceInfo info) {
-        if (!oneVsMoreThreadStauts && isOpenOneVsMore && Infra_red) {
+        if (!oneVsMoreThreadStauts && isOpenOneVsMore && Infra_red && !admin_is_login) {
             oneVsMoreThreadStauts = true;
             OneVsMoreThread thread = new OneVsMoreThread(info);
             thread.start();
@@ -1007,6 +1031,11 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                 }
                 GPIOHelper.openDoor(true);
                 openRelay();
+                HttpAdmin.adminLogin(mContext);
+                if (AppData.getAppData().getAdmin_login_flag()) {
+                    admin_is_login = true;
+                    drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+                }
 
                 mHandler.postDelayed(new Runnable() {
                     @Override
