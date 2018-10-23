@@ -1,7 +1,6 @@
 package com.runvision.g68a_sn;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
@@ -15,7 +14,6 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -31,10 +29,8 @@ import android.support.v7.widget.GridLayoutManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -114,17 +110,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
-import java.util.TimerTask;
-
 import android_serialport_api.SerialPort;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import es.dmoral.toasty.Toasty;
 import okhttp3.Call;
 import okhttp3.MediaType;
 
+/**
+ * 人脸验证
+ */
 public class MainActivity extends BaseActivity implements NetWorkStateReceiver.INetStatusListener,
-        View.OnClickListener, NavigationView.OnNavigationItemSelectedListener, OnDateSetListener {
+        NavigationView.OnNavigationItemSelectedListener, OnDateSetListener {
+
     private static String TAG = MainActivity.class.getSimpleName();
 
     private Context mContext;
@@ -1601,10 +1600,11 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         }
     }
 
-    @Override
+    @OnClick({R.id.fullscreen_content})
     public void onClick(View view) {
         switch (view.getId()) {
-            default:
+            case R.id.fullscreen_content:
+                toggle();
                 break;
         }
     }
