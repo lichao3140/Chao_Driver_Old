@@ -21,10 +21,12 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
 import android.support.v7.widget.GridLayoutManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -115,6 +117,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import android_serialport_api.SerialPort;
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import es.dmoral.toasty.Toasty;
 import okhttp3.Call;
 import okhttp3.MediaType;
@@ -204,6 +208,41 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     private int selectId;
 
     SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    private static final int UI_ANIMATION_DELAY = 300;
+    private final Handler mHideHandler = new Handler();
+    @BindView(R.id.fullscreen_content)
+    View mContentView;
+
+    private final Runnable mHidePart2Runnable = new Runnable() {
+        @SuppressLint("InlinedApi")
+        @Override
+        public void run() {
+            mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+        }
+    };
+
+    private View mControlsView;
+    private final Runnable mShowPart2Runnable = new Runnable() {
+        @Override
+        public void run() {
+            ActionBar actionBar = getSupportActionBar();
+            if (actionBar != null) {
+                actionBar.show();
+            }
+            //initSign();
+            mControlsView.setVisibility(View.VISIBLE);
+        }
+    };
+
+    private boolean mVisible;
+    private final Runnable mHideRunnable = () -> hide();
+
     /**
      * 消息响应
      */
@@ -555,14 +594,11 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        // 全屏代码
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-        hideBottomUIMenu();
+        ButterKnife.bind(this);
         initView();
         initRelay();
         mContext = this;
+        mVisible = true;
 
         application = (MyApplication) getApplication();
         application.init();
@@ -578,7 +614,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     @Override
     protected void onResume() {
         super.onResume();
-        hideBottomUIMenu();
         // stratThread();
         // bStop = false;
         IntentFilter usbDeviceStateFilter = new IntentFilter();
@@ -672,6 +707,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         imageStack = mCameraSurfView.getImgStack();
         home_layout = (RelativeLayout) findViewById(R.id.home_layout);//待机界面
 
+        mControlsView = findViewById(R.id.fullscreen_content_controls);
         drawerLayout = findViewById(R.id.drawer);
         if (admin_is_login) {
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);//打开手势滑动
@@ -823,7 +859,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         int w = bmp.getWidth() % 2 == 0 ? bmp.getWidth() : bmp.getWidth() - 1;
         int h = bmp.getHeight() % 2 == 0 ? bmp.getHeight() : bmp.getHeight() - 1;
         byte[] cardDes = CameraHelp.getNV21(w, h, bmp);
-        List<AFD_FSDKFace> result_card = new ArrayList<AFD_FSDKFace>();
+        List<AFD_FSDKFace> result_card = new ArrayList<>();
         MyApplication.mFaceLibCore.FaceDetection(cardDes, w, h, result_card);
         if (result_card.size() == 0) {
             return;
@@ -941,25 +977,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     }
 
     /**
-     * 隐藏虚拟按键，并且全屏
-     */
-    @SuppressLint("NewApi")
-    protected void hideBottomUIMenu() {
-        // 隐藏虚拟按键，并且全屏
-        if (Build.VERSION.SDK_INT > 11 && Build.VERSION.SDK_INT < 19) {
-            View v = this.getWindow().getDecorView();
-            v.setSystemUiVisibility(View.GONE);
-        } else if (Build.VERSION.SDK_INT >= 19) {
-            // for new api versions.
-            View decorView = getWindow().getDecorView();
-            int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN;
-            decorView.setSystemUiVisibility(uiOptions);
-        }
-    }
-
-    /**
      * 提示显示框
      */
     private void ShowPromptMessage(String showmessage, int audionum) {
@@ -1024,12 +1041,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                     drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
                 }
 
-                mHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        GPIOHelper.openDoor(false);
-                    }
-                }, SPUtil.getInt(Const.KEY_OPENDOOR, Const.CLOSE_DOOR_TIME) * 1000);
+                mHandler.postDelayed(() -> GPIOHelper.openDoor(false), SPUtil.getInt(Const.KEY_OPENDOOR, Const.CLOSE_DOOR_TIME) * 1000);
 
                 oneVsMore_userName.setText(user.getName());
                 oneVsMore_userType.setText(user.getType());
@@ -2193,5 +2205,46 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         }
         handler = null;
         runnable = null;
+    }
+
+    @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        delayedHide(100);
+    }
+
+    private void toggle() {
+        if (mVisible) {
+            hide();
+        } else {
+            show();
+        }
+    }
+
+    private void hide() {
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.hide();
+        }
+        mControlsView.setVisibility(View.GONE);
+        mVisible = false;
+
+        mHideHandler.removeCallbacks(mShowPart2Runnable);
+        mHideHandler.postDelayed(mHidePart2Runnable, UI_ANIMATION_DELAY);
+    }
+
+    @SuppressLint("InlinedApi")
+    private void show() {
+        mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        mVisible = true;
+
+        mHideHandler.removeCallbacks(mHidePart2Runnable);
+        mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY);
+    }
+
+    private void delayedHide(int delayMillis) {
+        mHideHandler.removeCallbacks(mHideRunnable);
+        mHideHandler.postDelayed(mHideRunnable, delayMillis);
     }
 }
