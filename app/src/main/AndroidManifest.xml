@@ -59,10 +59,6 @@
         <activity
             android:name=".RegisterDeviceActivity"
             android:screenOrientation="portrait" />
-        <activity
-            android:name=".FaceActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:screenOrientation="portrait" />
 
         <activity
             android:name=".MainActivity"
@@ -93,11 +89,6 @@
             </intent-filter>
         </receiver>
 
-        <activity
-            android:name=".CameraActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="@string/title_activity_camera"
-            android:theme="@style/FullscreenTheme" />
     </application>
 
 </manifest>

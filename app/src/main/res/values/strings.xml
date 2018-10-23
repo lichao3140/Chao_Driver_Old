@@ -49,9 +49,6 @@
     <string name="sure">Sure</string>
     <string name="cancel">Cancel</string>
 
-    <string name="title_activity_camera">CameraActivity</string>
-    <string name="title_activity_settings">Settings</string>
-
     <string-array name="user_type">
         <item>Unknown</item>
         <item>Blacklist</item>

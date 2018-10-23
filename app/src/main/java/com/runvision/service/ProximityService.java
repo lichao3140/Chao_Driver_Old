@@ -12,6 +12,9 @@ import android.util.Log;
 import android.widget.Toast;
 import com.common.pos.api.util.PosUtil;
 
+/**
+ * 红外
+ */
 public class ProximityService extends Service {
 
     private Timer mTimer = null;

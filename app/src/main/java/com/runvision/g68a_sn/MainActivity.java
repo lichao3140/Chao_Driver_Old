@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -34,6 +35,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -50,12 +52,17 @@ import com.mylhyl.circledialog.CircleDialog;
 import com.runvision.HttpCallback.HttpAdmin;
 import com.runvision.adapter.CheckedAdapter;
 import com.runvision.adapter.PictureTypeEntity;
+import com.runvision.adapter.SignAdapter;
 import com.runvision.bean.AppData;
 import com.runvision.bean.Atnd;
 import com.runvision.bean.AtndResponse;
 import com.runvision.bean.Cours;
+import com.runvision.bean.DaoSession;
 import com.runvision.bean.FaceInfo;
+import com.runvision.bean.IDCard;
+import com.runvision.bean.IDCardDao;
 import com.runvision.bean.ImageStack;
+import com.runvision.bean.Sign;
 import com.runvision.broadcast.NetWorkStateReceiver;
 import com.runvision.core.Const;
 import com.runvision.db.Record;
@@ -205,6 +212,11 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     //考勤课程选择
     private String select_index;
     private int selectId;
+    private IDCardDao idCardDao;
+    private List<IDCard> idCards;
+    private List<Sign> signList;
+    private SignAdapter signadapter;
+    private ListView sign_listView;
 
     SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -234,7 +246,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             if (actionBar != null) {
                 actionBar.show();
             }
-            //initSign();
+            initSign();
             mControlsView.setVisibility(View.VISIBLE);
         }
     };
@@ -593,11 +605,17 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ButterKnife.bind(this);
-        initView();
-        initRelay();
+
         mContext = this;
         mVisible = true;
+
+        ButterKnife.bind(this);
+        DaoSession daoSession = application.getDaoSession();
+        idCardDao = daoSession.getIDCardDao();
+
+        initView();
+        initData();
+        initRelay();
 
         application = (MyApplication) getApplication();
         application.init();
@@ -745,6 +763,10 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         cardNumber = alert.findViewById(R.id.cardNumber);
         isSuccessComper = alert.findViewById(R.id.isSuccessComper);
 
+        //身份证打卡显示
+        sign_listView = findViewById(R.id.lv_sign);
+        sign_listView.setAdapter(signadapter);
+
         //刷卡标记
         pro_xml = findViewById(R.id.pro);
 
@@ -755,6 +777,20 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         home_set.setOnClickListener(view -> {
             showConfirmPsdDialog();
         });
+    }
+
+    private void initData() {
+        idCards = new ArrayList<>();
+        signList = new ArrayList<>();
+        idCards = idCardDao.loadAll();
+        for (int i = 0; i < idCards.size(); i++) {
+            IDCard idCard = idCards.get(i);
+            String idnum = idCard.getId_card().substring(0, 6) + "*********" + idCard.getId_card().substring(16, 18);
+            Sign sd = new Sign(idCard.getName(),  CameraHelp.getSmallBitmap(idCard.getIdcardpic()), idCard.getGender(), idnum, idCard.getSign_in());
+            signList.add(sd);
+            Log.i("lichao", "name:" + idCard.getName());
+        }
+        signadapter = new SignAdapter(mContext, R.layout.signin_item, signList);
     }
 
     private void initRelay() {
@@ -876,7 +912,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             return;
         }
         AppData.getAppData().setoneCompareScore(score.getScore());
-        //  Log.i("Gavin","oneCompareScore:"+AppData.getAppData().getoneCompareScore());
     }
 
     private BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
@@ -894,7 +929,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                         try {
                             idCardReader.close(0);
                         } catch (IDCardReaderException e) {
-                            // TODO Auto-generated catch block
                             Log.i(TAG, "关闭失败");
                         }
                         IDCardReaderFactory.destroy(idCardReader);
@@ -2147,6 +2181,20 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * 初始化考勤数据
+     */
+    private void initSign() {
+        idCards = idCardDao.loadAll();
+        for (int i = 0; i < idCards.size(); i++) {
+            IDCard idCard = idCards.get(i);
+            String idnum = idCard.getId_card().substring(0, 6) + "*********" + idCard.getId_card().substring(16, 18);
+            Sign sd = new Sign(idCard.getName(),  CameraHelp.getSmallBitmap(idCard.getIdcardpic()), idCard.getGender(), idnum, idCard.getSign_in());
+            signList.add(sd);
+            Log.i("lichao", "name:" + idCard.getName());
         }
     }
 

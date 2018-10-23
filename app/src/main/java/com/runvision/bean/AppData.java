@@ -166,10 +166,10 @@ public class AppData {
         this.updatedeviceip = updatedeviceip;
     }
 
-    private String instarttime="08:00:00";//签到开始时间
-    private String inendtime="12:00:00";//签到结束时间
-    private String outstarttime="14:00:00";//签退开始时间
-    private String outendtime="18:00:00";//签退结束时间
+    private String instarttime = "08:00:00";//签到开始时间
+    private String inendtime = "12:00:00";//签到结束时间
+    private String outstarttime = "14:00:00";//签退开始时间
+    private String outendtime = "18:00:00";//签退结束时间
 
     public String getInstarttime() {
         return instarttime;
