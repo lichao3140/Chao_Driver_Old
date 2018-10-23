@@ -32,7 +32,7 @@ public class Const {
 
     public static float ONEVSMORE_SCORE = 0.60f;//1：N阈值
 
-    public static float ONEVSONE_SCORE = 0.45f;//1：1阈值
+    public static float ONEVSONE_SCORE = 0.40f;//1：1阈值
 
     /**
      * 是否注册人脸标志位

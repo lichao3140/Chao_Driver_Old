@@ -832,7 +832,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         if (ret != 0) {
             return;
         }
-        // System.out.println("人证分数:" + score.getScore());
         AppData.getAppData().setoneCompareScore(score.getScore());
         //  Log.i("Gavin","oneCompareScore:"+AppData.getAppData().getoneCompareScore());
     }
