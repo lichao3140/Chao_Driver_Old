@@ -800,12 +800,19 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     public void faceComperFrame(Bitmap bmp) {
         //提取人脸
         List<AFD_FSDKFace> result = new ArrayList<AFD_FSDKFace>();
-        byte[] des = CameraHelp.rotateCamera(imageStack.pullImageInfo().getData(), 640, 480, 270);
+        byte[] des = CameraHelp.rotateCamera(imageStack.pullImageInfo().getData(), 640, 480, 90);
         MyApplication.mFaceLibCore.FaceDetection(des, 480, 640, result);
+
         if (result.size() == 0) {
             return;
         }
-
+        //活体
+        List<com.arcsoft.liveness.FaceInfo> faceInfos = new ArrayList<>();
+        com.arcsoft.liveness.FaceInfo faceInfo = new com.arcsoft.liveness.FaceInfo(result.get(0).getRect(), result.get(0).getDegree());
+        faceInfos.add(faceInfo);
+        if (!MyApplication.mFaceLibCore.detect(des, 480, 640, faceInfos)) {
+            return;
+        }
         AppData.getAppData().setOneFaceBmp(CameraHelp.getFaceImgByInfraredJpg(result.get(0).getRect().left, result.get(0).getRect().top, result.get(0).getRect().right, result.get(0).getRect().bottom, CameraHelp.getBitMap(des)));
         AFR_FSDKFace face = new AFR_FSDKFace();
         int ret = MyApplication.mFaceLibCore.FaceFeature(des, 480, 640, result.get(0).getRect(), result.get(0).getDegree(), face);
@@ -827,6 +834,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             return;
         }
 
+        //比对分数
         AFR_FSDKMatching score = new AFR_FSDKMatching();
         ret = MyApplication.mFaceLibCore.FacePairMatching(face, card, score);
         if (ret != 0) {
