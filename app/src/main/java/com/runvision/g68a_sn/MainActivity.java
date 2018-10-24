@@ -8,7 +8,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -87,6 +86,7 @@ import com.runvision.utils.RSAUtils;
 import com.runvision.utils.SPUtil;
 import com.runvision.utils.SendData;
 import com.runvision.utils.TestDate;
+import com.runvision.utils.TimeCompareUtil;
 import com.runvision.utils.TimeUtils;
 import com.runvision.utils.UUIDUtil;
 import com.runvision.webcore.ServerManager;
@@ -208,6 +208,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     private Toast mToast;
     private Boolean SysTimeflag = true;
     private Timer timer;
+    private TimeCompareUtil timecompare;
     List<User> mList;
 
     private TimePickerDialog mDialogHourMinute;
@@ -612,7 +613,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
 
         mContext = this;
         mVisible = true;
-
+        timecompare = new TimeCompareUtil();
         ButterKnife.bind(this);
         DaoSession daoSession = application.getDaoSession();
         idCardDao = daoSession.getIDCardDao();
@@ -841,7 +842,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                             public void run() {
                                 long start = System.currentTimeMillis();
                                 faceComperFrame(cardBmp);
-                                // System.out.println("人证比对时间:" + (System.currentTimeMillis() - start));
                                 AppData.getAppData().setName(idCardInfo.getName());
                                 AppData.getAppData().setSex(idCardInfo.getSex());
                                 AppData.getAppData().setNation(idCardInfo.getNation());
@@ -1171,7 +1171,126 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                 + AppData.getAppData().getCardNo().substring(16, 18));
         card_nation.setText(AppData.getAppData().getNation());
         faceBmp_view.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        if (AppData.getAppData().getoneCompareScore() == 0) {
+        //选择课程
+        if (SPUtil.getString(Const.SELECT_COURSE_NAME, "").equals("")) {
+            playMusic(R.raw.no_select_coures);
+            Log.i("lichao", "没有选择课程");
+        } else if (timecompare.TimeCompare(AppData.getAppData().getInstarttime(), AppData.getAppData().getInendtime(), timecompare.getSystemTime())) {
+            playMusic(R.raw.no_sign_time);
+            Log.i("lichao", "签到时间未到");
+        } else if (timecompare.TimeCompare(AppData.getAppData().getInendtime(), AppData.getAppData().getOutstarttime(), timecompare.getSystemTime())) {
+            playMusic(R.raw.sign_time_over);
+            Log.i("lichao", "签到已过，签退未到");
+        } else if (timecompare.TimeCompare(AppData.getAppData().getOutendtime(), AppData.getAppData().getOutendtime(), timecompare.getSystemTime())) {
+            playMusic(R.raw.sign_out_time_over);
+            Log.i("lichao", "签退时间已过");
+        } else if (timecompare.TimeCompare(AppData.getAppData().getInstarttime(), AppData.getAppData().getInendtime(), timecompare.getSystemTime())) {
+            Log.i("lichao", "正常签到");
+            if (AppData.getAppData().getOneFaceBmp() != null && AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE)) {
+                str = "成功";
+                playMusic(R.raw.sign_success);
+                isSuccessComper.setImageResource(R.mipmap.icon_tg);
+                faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
+                GPIOHelper.openDoor(true);
+
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        GPIOHelper.openDoor(false);
+                    }
+                }, SPUtil.getInt(Const.KEY_OPENDOOR, Const.CLOSE_DOOR_TIME) * 1000);
+
+                //保存抓拍图片
+                String snapImageID = IDUtils.genImageName();
+                if (AppData.getAppData().getOneFaceBmp() != null) {
+                    FileUtils.saveFile(AppData.getAppData().getOneFaceBmp(), snapImageID, TestDate.DGetSysTime() + "_Face");
+                }
+                //保存身份证图片
+                String cardImageID = snapImageID + "_card";
+                if (AppData.getAppData().getCardBmp() != null) {
+                    FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
+                }
+
+                //插入数据库
+                Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
+                User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
+                user.setRecord(record);
+                MyApplication.faceProvider.addRecord(user);
+
+                IDCard idCard = new IDCard();
+                idCard.setName(AppData.getAppData().getName());
+                idCard.setGender(AppData.getAppData().getSex());
+                idCard.setId_card(AppData.getAppData().getCardNo());
+                idCard.setFacepic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg");
+                idCard.setIdcardpic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID + ".jpg");
+                idCard.setSign_in(String.valueOf(timecompare.getSystemTime()));
+                idCard.setSn(UUIDUtil.getUniqueID(mContext) + TimeUtils.getTime13());
+                idCardDao.insert(idCard);
+
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        GPIOHelper.openDoor(false);
+                    }
+                }, 1000);
+                oneVsMoreView.setVisibility(View.GONE);
+                alert.setVisibility(View.VISIBLE);
+            }
+        } else if (timecompare.TimeCompare(AppData.getAppData().getOutstarttime(), AppData.getAppData().getOutendtime(), timecompare.getSystemTime())) {
+            Log.i("lichao", "正常签退");
+            if (AppData.getAppData().getOneFaceBmp() != null && AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE)) {
+                str = "成功";
+                playMusic(R.raw.sign_out_success);
+                isSuccessComper.setImageResource(R.mipmap.icon_tg);
+                faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
+                GPIOHelper.openDoor(true);
+
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        GPIOHelper.openDoor(false);
+                    }
+                }, SPUtil.getInt(Const.KEY_OPENDOOR, Const.CLOSE_DOOR_TIME) * 1000);
+
+                //保存抓拍图片
+                String snapImageID = IDUtils.genImageName();
+                if (AppData.getAppData().getOneFaceBmp() != null) {
+                    FileUtils.saveFile(AppData.getAppData().getOneFaceBmp(), snapImageID, TestDate.DGetSysTime() + "_Face");
+                }
+                //保存身份证图片
+                String cardImageID = snapImageID + "_card";
+                if (AppData.getAppData().getCardBmp() != null) {
+                    FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
+                }
+
+                //插入数据库
+                Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
+                User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
+                user.setRecord(record);
+                MyApplication.faceProvider.addRecord(user);
+
+                IDCard idCard = new IDCard();
+                idCard.setName(AppData.getAppData().getName());
+                idCard.setGender(AppData.getAppData().getSex());
+                idCard.setId_card(AppData.getAppData().getCardNo());
+                idCard.setFacepic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg");
+                idCard.setIdcardpic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID + ".jpg");
+                idCard.setSign_in(String.valueOf(timecompare.getSystemTime()));
+                idCard.setSn(UUIDUtil.getUniqueID(mContext) + TimeUtils.getTime13());
+                idCardDao.insert(idCard);
+
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        GPIOHelper.openDoor(false);
+                    }
+                }, 1000);
+                oneVsMoreView.setVisibility(View.GONE);
+                alert.setVisibility(View.VISIBLE);
+            }
+        }
+
+        else if (AppData.getAppData().getoneCompareScore() == 0) {
             str = "失败";
             isSuccessComper.setImageResource(R.mipmap.icon_sb);
             if (AppData.getAppData().getOneFaceBmp() == null) {
@@ -1199,7 +1318,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         } else if (AppData.getAppData().getoneCompareScore() < SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE) && AppData.getAppData().getOneFaceBmp() != null) {
             str = "失败";
             isSuccessComper.setImageResource(R.mipmap.icon_sb);
-            playMusic(R.raw.error);
+            playMusic(R.raw.valid_not_pass);
             faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
             //保存抓拍图片
             String snapImageID = IDUtils.genImageName();
@@ -1217,7 +1336,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             alert.setVisibility(View.VISIBLE);
         } else if (AppData.getAppData().getOneFaceBmp() != null && AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE)) {
             str = "成功";
-            playMusic(R.raw.success);
+            playMusic(R.raw.sign_success);
             isSuccessComper.setImageResource(R.mipmap.icon_tg);
             faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
             GPIOHelper.openDoor(true);
@@ -1252,9 +1371,10 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             idCard.setId_card(AppData.getAppData().getCardNo());
             idCard.setFacepic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg");
             idCard.setIdcardpic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID + ".jpg");
-            idCard.setSign_in(String.valueOf(DateTimeUtils.getTime()));
+            idCard.setSign_in(String.valueOf(timecompare.getSystemTime()));
             idCard.setSn(UUIDUtil.getUniqueID(mContext) + TimeUtils.getTime13());
             idCardDao.insert(idCard);
+
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -1265,6 +1385,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             alert.setVisibility(View.VISIBLE);
 
         } else {
+            playMusic(R.raw.no_cours_time);
             oneVsMoreView.setVisibility(View.GONE);
             alert.setVisibility(View.GONE);
         }
@@ -1369,7 +1490,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         }
 
         list.add(new PictureTypeEntity(6, "签退结束时间:"));
-        if (SPUtil.getString(Const.TIME_SIGN_OUT_BEGIN, "").equals("")) {
+        if (SPUtil.getString(Const.TIME_SIGN_OUT_END, "").equals("")) {
             list.add(new PictureTypeEntity(8, TimeUtils.getYearMonth() + "\t" + AppData.getAppData().getOutendtime()));
         } else {
             list.add(new PictureTypeEntity(8, TimeUtils.getYearMonth() + "\t" + SPUtil.getString(Const.TIME_SIGN_OUT_END, "")));
