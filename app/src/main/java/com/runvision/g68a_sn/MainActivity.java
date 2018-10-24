@@ -3,6 +3,7 @@ package com.runvision.g68a_sn;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -87,6 +88,7 @@ import com.runvision.utils.SPUtil;
 import com.runvision.utils.SendData;
 import com.runvision.utils.TestDate;
 import com.runvision.utils.TimeUtils;
+import com.runvision.utils.UUIDUtil;
 import com.runvision.webcore.ServerManager;
 import com.wits.serialport.SerialPortManager;
 import com.zhy.http.okhttp.OkHttpUtils;
@@ -185,7 +187,9 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     private static final int VID = 1024; // IDR VID
     private static final int PID = 50010; // IDR PID
     private IDCardReader idCardReader = null;
+    private UsbManager musbManager = null;
     private boolean ReaderCardFlag = true;
+    private final String ACTION_USB_PERMISSION = "com.example.scarx.idcardreader.USB_PERMISSION";
 
     // ------------------------------这个按钮是设置或以开关的----------------------------------
     //这个按钮是设置或以开关的
@@ -765,7 +769,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
 
         //身份证打卡显示
         sign_listView = findViewById(R.id.lv_sign);
-        sign_listView.setAdapter(signadapter);
 
         //刷卡标记
         pro_xml = findViewById(R.id.pro);
@@ -788,9 +791,9 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             String idnum = idCard.getId_card().substring(0, 6) + "*********" + idCard.getId_card().substring(16, 18);
             Sign sd = new Sign(idCard.getName(),  CameraHelp.getSmallBitmap(idCard.getIdcardpic()), idCard.getGender(), idnum, idCard.getSign_in());
             signList.add(sd);
-            Log.i("lichao", "name:" + idCard.getName());
         }
         signadapter = new SignAdapter(mContext, R.layout.signin_item, signList);
+        sign_listView.setAdapter(signadapter);
     }
 
     private void initRelay() {
@@ -953,12 +956,27 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         Map idrparams = new HashMap();
         idrparams.put(ParameterHelper.PARAM_KEY_VID, VID);
         idrparams.put(ParameterHelper.PARAM_KEY_PID, PID);
-        idCardReader = IDCardReaderFactory.createIDCardReader(this,
-                TransportType.USB, idrparams);
+        idCardReader = IDCardReaderFactory.createIDCardReader(this, TransportType.USB, idrparams);
+        RequestDevicePermission();
         readCard();
-
     }
 
+    private void RequestDevicePermission() {
+        musbManager = (UsbManager)this.getSystemService(Context.USB_SERVICE);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(ACTION_USB_PERMISSION);
+        filter.addAction(UsbManager.ACTION_USB_ACCESSORY_ATTACHED);
+        mContext.registerReceiver(mUsbReceiver, filter);
+
+        for (UsbDevice device : musbManager.getDeviceList().values()) {
+            if (device.getVendorId() == VID && device.getProductId() == PID)
+            {
+                Intent intent = new Intent(ACTION_USB_PERMISSION);
+                PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, 0, intent, 0);
+                musbManager.requestPermission(device, pendingIntent);
+            }
+        }
+    }
 
     private void readCard() {
         try {
@@ -1222,12 +1240,23 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                 FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
             }
 
+            //插入数据库
             Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
             User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
             user.setRecord(record);
             MyApplication.faceProvider.addRecord(user);
 
-
+            IDCard idCard = new IDCard();
+            idCard.setName(AppData.getAppData().getName());
+            idCard.setGender(AppData.getAppData().getSex());
+            idCard.setId_card(AppData.getAppData().getCardNo());
+            idCard.setFacepic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID);
+            idCard.setIdcardpic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID);
+            idCard.setSign_in(String.valueOf(DateTimeUtils.getTime()));
+            idCard.setSn(UUIDUtil.getUniqueID(mContext) + TimeUtils.getTime13());
+            idCardDao.insert(idCard);
+            Log.i(TAG, "idCard name:" + AppData.getAppData().getName());
+            Log.i(TAG, "insert data");
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -1297,7 +1326,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             case R.id.nav_sign:
                 break;
             case R.id.nav_exit:
-                application.finishActivity();
+                showTipExit();
                 break;
             case R.id.nav_about:
                 new CircleDialog.Builder()
@@ -2194,7 +2223,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             String idnum = idCard.getId_card().substring(0, 6) + "*********" + idCard.getId_card().substring(16, 18);
             Sign sd = new Sign(idCard.getName(),  CameraHelp.getSmallBitmap(idCard.getIdcardpic()), idCard.getGender(), idnum, idCard.getSign_in());
             signList.add(sd);
-            Log.i("lichao", "name:" + idCard.getName());
+            Log.i("lichao", "initSign name:" + idCard.getName());
         }
     }
 

@@ -126,7 +126,7 @@ public class FaceFramTask extends AsyncTask<Void, Rect, Void> {
                     }
                 }
             } else {
-                Log.i("lichao", "无人脸");
+//                Log.i("lichao", "无人脸");
                 faceflag=false;
                 publishProgress(new Rect(0, 0, 0, 0));
             }
