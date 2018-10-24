@@ -50,6 +50,7 @@ import com.jzxiang.pickerview.data.Type;
 import com.jzxiang.pickerview.listener.OnDateSetListener;
 import com.mylhyl.circledialog.CircleDialog;
 import com.runvision.HttpCallback.HttpAdmin;
+import com.runvision.HttpCallback.HttpStudent;
 import com.runvision.adapter.CheckedAdapter;
 import com.runvision.adapter.PictureTypeEntity;
 import com.runvision.adapter.SignAdapter;
@@ -209,6 +210,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     private Boolean SysTimeflag = true;
     private Timer timer;
     private TimeCompareUtil timecompare;
+    public String stu_sn = null;
     List<User> mList;
 
     private TimePickerDialog mDialogHourMinute;
@@ -614,6 +616,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         mContext = this;
         mVisible = true;
         timecompare = new TimeCompareUtil();
+        stu_sn = UUIDUtil.getUniqueID(mContext) + TimeUtils.getTime13();
         ButterKnife.bind(this);
         DaoSession daoSession = application.getDaoSession();
         idCardDao = daoSession.getIDCardDao();
@@ -1171,11 +1174,29 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                 + AppData.getAppData().getCardNo().substring(16, 18));
         card_nation.setText(AppData.getAppData().getNation());
         faceBmp_view.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
+        if (!SPUtil.getString(Const.TIME_SIGN_BEGIN, "").equals("")) {
+            AppData.getAppData().setInstarttime(SPUtil.getString(Const.TIME_SIGN_BEGIN, ""));
+        }
+        if (!SPUtil.getString(Const.TIME_SIGN_END, "").equals("")) {
+            AppData.getAppData().setInendtime(SPUtil.getString(Const.TIME_SIGN_END, ""));
+        }
+        if (!SPUtil.getString(Const.TIME_SIGN_OUT_BEGIN, "").equals("")) {
+            AppData.getAppData().setOutstarttime(SPUtil.getString(Const.TIME_SIGN_OUT_BEGIN, ""));
+        }
+        if (!SPUtil.getString(Const.TIME_SIGN_OUT_END, "").equals("")) {
+            AppData.getAppData().setOutendtime(SPUtil.getString(Const.TIME_SIGN_OUT_END, ""));
+        }
+
+        String devnum = SPUtil.getString(Const.DEV_NUM, "");
+        String gps = SPUtil.getString(Const.DEV_GPS, "");
+        String classcode = SPUtil.getString(Const.SELECT_COURSE_NAME, "");
+
         //选择课程
         if (SPUtil.getString(Const.SELECT_COURSE_NAME, "").equals("")) {
             playMusic(R.raw.no_select_coures);
             Log.i("lichao", "没有选择课程");
-        } else if (timecompare.TimeCompare(AppData.getAppData().getInstarttime(), AppData.getAppData().getInendtime(), timecompare.getSystemTime())) {
+        } else if (timecompare.TimeCompare(AppData.getAppData().getInstarttime(), AppData.getAppData().getInstarttime(), timecompare.getSystemTime())) {
             playMusic(R.raw.no_sign_time);
             Log.i("lichao", "签到时间未到");
         } else if (timecompare.TimeCompare(AppData.getAppData().getInendtime(), AppData.getAppData().getOutstarttime(), timecompare.getSystemTime())) {
@@ -1191,14 +1212,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                 playMusic(R.raw.sign_success);
                 isSuccessComper.setImageResource(R.mipmap.icon_tg);
                 faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
-                GPIOHelper.openDoor(true);
-
-                mHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        GPIOHelper.openDoor(false);
-                    }
-                }, SPUtil.getInt(Const.KEY_OPENDOOR, Const.CLOSE_DOOR_TIME) * 1000);
 
                 //保存抓拍图片
                 String snapImageID = IDUtils.genImageName();
@@ -1217,6 +1230,10 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                 user.setRecord(record);
                 MyApplication.faceProvider.addRecord(user);
 
+                HttpStudent.Stulogin(mContext, devnum, TimeUtils.getCurrentTime(), AppData.getAppData().getCardNo(), "1", gps,
+                        CameraHelp.bitmapToBase64(CameraHelp.getSmallBitmap(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg")),
+                        classcode, stu_sn, AppData.getAppData().getName());
+
                 IDCard idCard = new IDCard();
                 idCard.setName(AppData.getAppData().getName());
                 idCard.setGender(AppData.getAppData().getSex());
@@ -1227,12 +1244,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                 idCard.setSn(UUIDUtil.getUniqueID(mContext) + TimeUtils.getTime13());
                 idCardDao.insert(idCard);
 
-                mHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        GPIOHelper.openDoor(false);
-                    }
-                }, 1000);
                 oneVsMoreView.setVisibility(View.GONE);
                 alert.setVisibility(View.VISIBLE);
             }
@@ -1269,15 +1280,15 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                 user.setRecord(record);
                 MyApplication.faceProvider.addRecord(user);
 
-                IDCard idCard = new IDCard();
-                idCard.setName(AppData.getAppData().getName());
-                idCard.setGender(AppData.getAppData().getSex());
-                idCard.setId_card(AppData.getAppData().getCardNo());
-                idCard.setFacepic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg");
-                idCard.setIdcardpic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID + ".jpg");
-                idCard.setSign_in(String.valueOf(timecompare.getSystemTime()));
-                idCard.setSn(UUIDUtil.getUniqueID(mContext) + TimeUtils.getTime13());
-                idCardDao.insert(idCard);
+                HttpStudent.Stulogout(mContext, devnum, TimeUtils.getCurrentTime(), AppData.getAppData().getCardNo(), "1", gps,
+                        CameraHelp.bitmapToBase64(CameraHelp.getSmallBitmap(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg")),
+                        classcode, stu_sn, 0, AppData.getAppData().getName());
+
+
+                IDCard delete_sn = idCardDao.queryBuilder().where(IDCardDao.Properties.Id_card.eq(AppData.getAppData().getCardNo())).unique();
+                Log.e("lichao", "delete_sn" + delete_sn);
+                idCardDao.deleteAll();
+
 
                 mHandler.postDelayed(new Runnable() {
                     @Override
