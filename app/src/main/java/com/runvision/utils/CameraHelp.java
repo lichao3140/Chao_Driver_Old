@@ -7,6 +7,7 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.os.Environment;
+import android.util.Base64;
 import android.util.Log;
 
 import java.io.ByteArrayInputStream;
@@ -735,6 +736,20 @@ public class CameraHelp {
         }
     }
 
-
+    /**
+     * bitmap转换成base64
+     * @param bitmap
+     * @return
+     */
+    public static String bitmapToBase64(Bitmap bitmap) {
+        //将Bitmap转换成字符串
+        String str = null;
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream ();
+        bitmap.compress(Bitmap.CompressFormat.JPEG,80,bStream);
+        byte[] bytes = bStream.toByteArray();
+        str = Base64.encodeToString(bytes,Base64.DEFAULT);
+        Log.d("Gavin","str.length():"+str.length());
+        return str;
+    }
 
 }

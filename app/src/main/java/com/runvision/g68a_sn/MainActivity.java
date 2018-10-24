@@ -250,7 +250,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             if (actionBar != null) {
                 actionBar.show();
             }
-            initSign();
+//            initSign();
             mControlsView.setVisibility(View.VISIBLE);
         }
     };
@@ -617,8 +617,8 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         DaoSession daoSession = application.getDaoSession();
         idCardDao = daoSession.getIDCardDao();
 
-        initView();
         initData();
+        initView();
         initRelay();
 
         application = (MyApplication) getApplication();
@@ -769,6 +769,8 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
 
         //身份证打卡显示
         sign_listView = findViewById(R.id.lv_sign);
+        signadapter = new SignAdapter(mContext, R.layout.signin_item, signList);
+        sign_listView.setAdapter(signadapter);
 
         //刷卡标记
         pro_xml = findViewById(R.id.pro);
@@ -792,8 +794,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             Sign sd = new Sign(idCard.getName(),  CameraHelp.getSmallBitmap(idCard.getIdcardpic()), idCard.getGender(), idnum, idCard.getSign_in());
             signList.add(sd);
         }
-        signadapter = new SignAdapter(mContext, R.layout.signin_item, signList);
-        sign_listView.setAdapter(signadapter);
     }
 
     private void initRelay() {
@@ -1250,13 +1250,11 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             idCard.setName(AppData.getAppData().getName());
             idCard.setGender(AppData.getAppData().getSex());
             idCard.setId_card(AppData.getAppData().getCardNo());
-            idCard.setFacepic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID);
-            idCard.setIdcardpic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID);
+            idCard.setFacepic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg");
+            idCard.setIdcardpic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID + ".jpg");
             idCard.setSign_in(String.valueOf(DateTimeUtils.getTime()));
             idCard.setSn(UUIDUtil.getUniqueID(mContext) + TimeUtils.getTime13());
             idCardDao.insert(idCard);
-            Log.i(TAG, "idCard name:" + AppData.getAppData().getName());
-            Log.i(TAG, "insert data");
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -2223,7 +2221,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             String idnum = idCard.getId_card().substring(0, 6) + "*********" + idCard.getId_card().substring(16, 18);
             Sign sd = new Sign(idCard.getName(),  CameraHelp.getSmallBitmap(idCard.getIdcardpic()), idCard.getGender(), idnum, idCard.getSign_in());
             signList.add(sd);
-            Log.i("lichao", "initSign name:" + idCard.getName());
         }
     }
 
