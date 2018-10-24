@@ -1254,14 +1254,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                 playMusic(R.raw.sign_out_success);
                 isSuccessComper.setImageResource(R.mipmap.icon_tg);
                 faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
-                GPIOHelper.openDoor(true);
-
-                mHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        GPIOHelper.openDoor(false);
-                    }
-                }, SPUtil.getInt(Const.KEY_OPENDOOR, Const.CLOSE_DOOR_TIME) * 1000);
 
                 //保存抓拍图片
                 String snapImageID = IDUtils.genImageName();
@@ -1287,15 +1279,10 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
 
                 IDCard delete_sn = idCardDao.queryBuilder().where(IDCardDao.Properties.Id_card.eq(AppData.getAppData().getCardNo())).unique();
                 Log.e("lichao", "delete_sn" + delete_sn);
-                idCardDao.deleteAll();
+                if (delete_sn != null) {
+                    idCardDao.deleteByKey(delete_sn.getId());
+                }
 
-
-                mHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        GPIOHelper.openDoor(false);
-                    }
-                }, 1000);
                 oneVsMoreView.setVisibility(View.GONE);
                 alert.setVisibility(View.VISIBLE);
             }
