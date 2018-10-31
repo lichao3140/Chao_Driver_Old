@@ -69,6 +69,10 @@
             android:name=".RegisterActivity"
             android:screenOrientation="portrait" />
 
+        <activity
+            android:name=".SignRecordActivity"
+            android:screenOrientation="portrait" />
+
         <service android:name="com.runvision.webcore.CoreService" />
 
         <service android:name="com.runvision.service.ProximityService" />

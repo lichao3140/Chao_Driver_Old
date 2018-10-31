@@ -11,7 +11,8 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/greenyellow"
+        android:background="@color/colorPrimary"
+        app:title="考勤记录"
         app:layout_scrollFlags="enterAlways|snap|scroll"
         app:popupTheme="@style/AppTheme.PopupOverlay"/>
 

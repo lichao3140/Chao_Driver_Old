@@ -1424,7 +1424,8 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 Atndquery();
                 break;
             case R.id.nav_sign:
-
+                Intent sign = new Intent(mContext, SignRecordActivity.class);
+                startActivity(sign);
                 break;
             case R.id.nav_add:
                 showConfirmPsdDialog();

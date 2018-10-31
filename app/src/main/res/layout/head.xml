@@ -33,6 +33,6 @@
         android:paddingTop="5dp"
         android:textSize="14sp"
         android:gravity="center"
-        android:text="江西广通驾校"
+        android:text="驾培理论学习系统"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 </LinearLayout>

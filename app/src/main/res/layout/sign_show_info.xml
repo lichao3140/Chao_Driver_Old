@@ -10,7 +10,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
-        android:text="本次考勤内容"
+        android:text="本次签到内容"
         android:textSize="30sp"/>
 
     <TableRow
