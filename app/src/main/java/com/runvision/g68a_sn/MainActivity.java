@@ -33,7 +33,6 @@ import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -95,7 +94,6 @@ import com.runvision.utils.TimeCompareUtil;
 import com.runvision.utils.TimeUtils;
 import com.runvision.utils.UUIDUtil;
 import com.runvision.webcore.ServerManager;
-import com.wits.serialport.SerialPortManager;
 import com.zhy.http.okhttp.OkHttpUtils;
 import com.zhy.http.okhttp.callback.StringCallback;
 import com.zkteco.android.IDReader.IDPhotoHelper;
@@ -110,11 +108,8 @@ import com.zkteco.android.biometric.module.idcard.meta.IDCardInfo;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.security.InvalidParameterException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -144,7 +139,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     private Intent intentService;
     private MyRedThread mMyRedThread;//红外线程
     private UIThread uithread;//UI线程
-    private SLecDeviceThread sLecDeviceThread;
 
     //////////////////////////////////////////////////视图控件
     public MyCameraSuf mCameraSurfView;
@@ -627,7 +621,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
         initData();
         initView();
-        initRelay();
 
         application = (MyApplication) getApplication();
         application.init();
@@ -679,7 +672,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         mCameraSurfView.releaseCamera();
         //关闭红外
         mMyRedThread.closeredThread();
-        sLecDeviceThread.interrupt();
         stopService(intentService);
 
         if (mMyRedThread != null) {
@@ -723,7 +715,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     @Override
     protected void onDestroy() {
         MyApplication.mFaceLibCore.UninitialAllEngine();
-        mSerialPortManager.closeSerialPort4();
         super.onDestroy();
     }
 
@@ -816,11 +807,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         }
     }
 
-    private void initRelay() {
-        mSerialPortManager = new SerialPortManager();
-        sLecDeviceThread = new SLecDeviceThread();
-        sLecDeviceThread.start();
-    }
 
     /**
      * 开启画人脸框线程
@@ -1096,7 +1082,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     return;
                 }
                 GPIOHelper.openDoor(true);
-                openRelay();
                 HttpAdmin.adminLogin(mContext);
                 if (AppData.getAppData().getAdmin_login_flag()) {
                     admin_is_login = true;
@@ -2076,36 +2061,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         return range;
     }
 
-    private SerialPortManager mSerialPortManager;
-    private InputStream mInputStream4;
-    private OutputStream mOutputStream4;
-    private com.wits.serialport.SerialPort serialPort4;
     private String icCard = "";
-
-    /**
-     * G69A串口控制
-     */
-    public void openRelay() {
-        if (mOutputStream4 == null) {
-            showToast("请先打开串口");
-            return;
-        }
-        try {
-            byte[] bytes1 = SlecProtocol.hexStringToBytes(new String[]{
-                            "55555555",  //用户id,8个字符，缺少的前面补0
-                            "12345678",//用户卡号,8个字符，缺少的的前面补0
-                            "0001"}//开门间隔,4个字符，缺少的的前面补0
-                    , true);
-            byte[] bytes = SlecProtocol.commandAndDataToAscii(
-                    ((byte) 0x01),
-                    bytes1
-            );
-            mOutputStream4.write(bytes);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     /**
      * 在java代码中执行adb命令
      * @param command
@@ -2148,61 +2104,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             return true;
         }
         return false;
-    }
-
-    private class SLecDeviceThread extends Thread {
-        @Override
-        public void run() {
-            super.run();
-            try {
-                //串口4，继电器控制
-                serialPort4 = mSerialPortManager.getSerialPort4();
-                mInputStream4 = serialPort4.getInputStream();
-                mOutputStream4 = serialPort4.getOutputStream();
-                sleep(500);
-                while (true) {
-                    try {
-                        sleep(50);
-                        byte[] buffer = new byte[64];
-                        if (mInputStream4 == null) {
-                            continue;
-                        }
-                        int size = mInputStream4.read(buffer);
-
-                        if (size < 1) {
-                            continue;
-                        }
-
-                        int len = icCard.length();
-                        Log.e("gzy", "run: " + size + "--" + icCard);
-                        if (len == 0) {
-                            //第一条数据
-                            icCard = SlecProtocol.bytesToHexString2(buffer, size);
-                        } else {
-                            //之前已经有数据
-                            icCard = icCard + SlecProtocol.bytesToHexString2(buffer, size);
-                        }
-                        mHandler.removeCallbacks(cancelCardRunnable);
-                        //200ms没有新的数据就发送
-                        mHandler.postDelayed(cancelCardRunnable, 200);
-
-                    } catch (SecurityException e) {
-                        Log.e("SerialPort", "-----------------SecurityException");
-                    } catch (IOException e) {
-                        Log.e("SerialPort", "-----------------IOException" + e.toString());
-                    } catch (InvalidParameterException e) {
-                        Log.e("SerialPort", "-----------------InvalidParameterException");
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     /**
