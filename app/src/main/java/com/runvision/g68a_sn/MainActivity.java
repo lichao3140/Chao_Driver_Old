@@ -807,7 +807,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         }
     }
 
-
     /**
      * 开启画人脸框线程
      */

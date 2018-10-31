@@ -28,6 +28,7 @@ import android.widget.Toast;
 
 import com.runvision.adapter.BaseAdapter;
 import com.runvision.adapter.MainAdapter;
+import com.runvision.bean.Sign;
 import com.yanzhenjie.recyclerview.swipe.SwipeItemClickListener;
 import com.yanzhenjie.recyclerview.swipe.SwipeMenuRecyclerView;
 import com.yanzhenjie.recyclerview.swipe.widget.DefaultItemDecoration;
