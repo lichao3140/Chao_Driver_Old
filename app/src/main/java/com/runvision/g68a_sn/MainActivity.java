@@ -26,10 +26,14 @@ import android.support.v4.app.DialogFragment;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -131,7 +135,7 @@ import okhttp3.MediaType;
 /**
  * 人脸验证
  */
-public class MainActivity extends BaseActivity implements NetWorkStateReceiver.INetStatusListener,
+public class MainActivity extends AppCompatActivity implements NetWorkStateReceiver.INetStatusListener,
         NavigationView.OnNavigationItemSelectedListener, OnDateSetListener {
 
     private static String TAG = MainActivity.class.getSimpleName();
@@ -157,9 +161,10 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
     private ImageView faceBmp_view, cardBmp_view, idcard_Bmp, isSuccessComper;
     private TextView card_name, card_sex, card_nation, name, year, month, day, addr, cardNumber, version;
 
-    private ImageView home_set;
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
+    private Toolbar toolbar;
+    private ActionBarDrawerToggle mDrawerToggle;
 
     private View pro_xml;//刷卡标记
 
@@ -253,7 +258,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             if (actionBar != null) {
                 actionBar.show();
             }
-//            initSign();
             mControlsView.setVisibility(View.VISIBLE);
         }
     };
@@ -665,7 +669,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         }
         mMyRedThread.startredThread();
         isOpenOneVsMore = true;
-        // Log.i("Gavin","mList:"+MyApplication.mList.size());
     }
 
     @Override
@@ -734,18 +737,35 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
 
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         drawerLayout = findViewById(R.id.drawer);
-        if (admin_is_login) {
-            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);//打开手势滑动
-        } else {
-            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);//关闭手势滑动
-        }
         navigationView = findViewById(R.id.navigation);
         navigationView.setNavigationItemSelectedListener(this);
         navigationView.setItemIconTintList(null);//显示图片原始样式
+        toolbar = findViewById(R.id.main_toolbar);
+        mDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.open, R.string.close) {
+
+            @Override
+            public void onDrawerOpened(View drawerView) {
+                super.onDrawerOpened(drawerView);
+                if (admin_is_login) {
+                    drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);//打开手势滑动
+                    drawerLayout.openDrawer(GravityCompat.START);
+                } else {
+                    drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);//关闭手势滑动
+                }
+            }
+
+            @Override
+            public void onDrawerClosed(View drawerView) {
+                super.onDrawerClosed(drawerView);
+                drawerLayout.closeDrawer(GravityCompat.START);
+            }
+        };
+        mDrawerToggle.syncState();
+        drawerLayout.setDrawerListener(mDrawerToggle);
 
         // 提示框
         promptshow_xml = findViewById(R.id.promptshow_xml);
-        loadprompt = (TextView) promptshow_xml.findViewById(R.id.loadprompt);
+        loadprompt = promptshow_xml.findViewById(R.id.loadprompt);
 
         //1:N
         oneVsMoreView = findViewById(R.id.onevsmore);
@@ -782,10 +802,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         socket_status = findViewById(R.id.socket_status);
         showHttpUrl = findViewById(R.id.showHttpUrl);
 
-        home_set = findViewById(R.id.home_set);
-        home_set.setOnClickListener(view -> {
-            showConfirmPsdDialog();
-        });
     }
 
     private void initData() {
@@ -986,37 +1002,34 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             idCardReader.open(0);
             bStop = false;
             Log.i(TAG, "设备连接成功");
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    while (!bStop) {
-                        long begin = System.currentTimeMillis();
-                        IDCardInfo idCardInfo = new IDCardInfo();
-                        boolean ret = false;
+            new Thread(() -> {
+                while (!bStop) {
+                    long begin = System.currentTimeMillis();
+                    IDCardInfo idCardInfo = new IDCardInfo();
+                    boolean ret = false;
+                    try {
+                        idCardReader.findCard(0);
+                        idCardReader.selectCard(0);
+                    } catch (IDCardReaderException e) {
+                        continue;
+                    }
+                    if (ReaderCardFlag == true) {
                         try {
-                            idCardReader.findCard(0);
-                            idCardReader.selectCard(0);
+                            ret = idCardReader.readCard(0, 0, idCardInfo);
                         } catch (IDCardReaderException e) {
-                            continue;
+                            Log.i(TAG, "读卡失败，错误信息：" + e.getMessage());
                         }
-                        if (ReaderCardFlag == true) {
-                            try {
-                                ret = idCardReader.readCard(0, 0, idCardInfo);
-                            } catch (IDCardReaderException e) {
-                                Log.i(TAG, "读卡失败，错误信息：" + e.getMessage());
-                            }
-                            if (ret) {
-                                Const.ONE_VS_MORE_TIMEOUT_NUM = 0;
-                                isOpenOneVsMore = false;
-                                ReaderCardFlag = false;
-                                final long nTickUsed = (System.currentTimeMillis() - begin);
-                                Log.i(TAG, "success>>>" + nTickUsed + ",name:" + idCardInfo.getName() + "," + idCardInfo.getValidityTime() + "，" + idCardInfo.getDepart());
-                                Message msg = new Message();
-                                msg.what = Const.READ_CARD;
-                                msg.obj = idCardInfo;
-                                mHandler.sendMessage(msg);
+                        if (ret) {
+                            Const.ONE_VS_MORE_TIMEOUT_NUM = 0;
+                            isOpenOneVsMore = false;
+                            ReaderCardFlag = false;
+                            final long nTickUsed = (System.currentTimeMillis() - begin);
+                            Log.i(TAG, "success>>>" + nTickUsed + ",name:" + idCardInfo.getName() + "," + idCardInfo.getValidityTime() + "，" + idCardInfo.getDepart());
+                            Message msg = new Message();
+                            msg.what = Const.READ_CARD;
+                            msg.obj = idCardInfo;
+                            mHandler.sendMessage(msg);
 
-                            }
                         }
                     }
                 }
@@ -1043,12 +1056,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
         loadprompt.setText(showmessage);
         promptshow_xml.setVisibility(View.VISIBLE);
         if (audionum != 2) {
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    promptshow_xml.setVisibility(View.GONE);
-                }
-            }, 1500);
+            mHandler.postDelayed(() -> promptshow_xml.setVisibility(View.GONE), 1500);
         }
     }
 
@@ -1339,12 +1347,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
             GPIOHelper.openDoor(true);
 
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    GPIOHelper.openDoor(false);
-                }
-            }, SPUtil.getInt(Const.KEY_OPENDOOR, Const.CLOSE_DOOR_TIME) * 1000);
+            mHandler.postDelayed(() -> GPIOHelper.openDoor(false), SPUtil.getInt(Const.KEY_OPENDOOR, Const.CLOSE_DOOR_TIME) * 1000);
 
             //保存抓拍图片
             String snapImageID = IDUtils.genImageName();
@@ -1373,12 +1376,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
             idCard.setSn(UUIDUtil.getUniqueID(mContext) + TimeUtils.getTime13());
             idCardDao.insert(idCard);
 
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    GPIOHelper.openDoor(false);
-                }
-            }, 1000);
+            mHandler.postDelayed(() -> GPIOHelper.openDoor(false), 1000);
             oneVsMoreView.setVisibility(View.GONE);
             alert.setVisibility(View.VISIBLE);
 
@@ -1438,9 +1436,13 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
                 settingTimeDialog();
                 break;
             case R.id.nav_config:
-               Atndquery();
+                Atndquery();
                 break;
             case R.id.nav_sign:
+
+                break;
+            case R.id.nav_add:
+                showConfirmPsdDialog();
                 break;
             case R.id.nav_exit:
                 showTipExit();
@@ -2273,6 +2275,7 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
 
                         @Override
                         public void onResponse(String response, int id) {
+                            Log.i("lichao", "考勤参数:" + response);
                             if (!response.equals("resource/500")) {
                                 Gson gson = new Gson();
                                 AtndResponse gsonAtnd = gson.fromJson(response, AtndResponse.class);
@@ -2327,19 +2330,6 @@ public class MainActivity extends BaseActivity implements NetWorkStateReceiver.I
 
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-    /**
-     * 初始化考勤数据
-     */
-    private void initSign() {
-        idCards = idCardDao.loadAll();
-        for (int i = 0; i < idCards.size(); i++) {
-            IDCard idCard = idCards.get(i);
-            String idnum = idCard.getId_card().substring(0, 6) + "*********" + idCard.getId_card().substring(16, 18);
-            Sign sd = new Sign(idCard.getName(),  CameraHelp.getSmallBitmap(idCard.getIdcardpic()), idCard.getGender(), idnum, idCard.getSign_in());
-            signList.add(sd);
         }
     }
 

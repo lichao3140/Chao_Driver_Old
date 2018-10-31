@@ -48,6 +48,8 @@
     <string name="back">Back</string>
     <string name="sure">Sure</string>
     <string name="cancel">Cancel</string>
+    <string name="open">open</string>
+    <string name="close">close</string>
 
     <string-array name="user_type">
         <item>Unknown</item>
