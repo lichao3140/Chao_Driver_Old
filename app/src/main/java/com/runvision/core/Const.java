@@ -196,6 +196,10 @@ public class Const {
     public static boolean WEB_UPDATE = false;
     public static boolean DELETETEMPLATE = false;
 
+    /**
+     * Apk更新路径
+     */
+    public static String APK_UPDATE_PATH = "https://fir.im/6g21";
 
     /**
      * 服务器地址

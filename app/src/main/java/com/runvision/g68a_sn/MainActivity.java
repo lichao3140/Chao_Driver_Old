@@ -1414,6 +1414,9 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             case R.id.nav_exit:
                 showTipExit();
                 break;
+            case R.id.nav_update:
+
+                break;
             case R.id.nav_about:
                 new CircleDialog.Builder()
                         .setTitle("技术支持")

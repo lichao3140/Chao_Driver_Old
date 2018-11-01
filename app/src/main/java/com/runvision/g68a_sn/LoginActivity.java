@@ -1,22 +1,31 @@
 package com.runvision.g68a_sn;
 
+import android.Manifest;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Base64;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.animation.LinearInterpolator;
@@ -41,7 +50,6 @@ import com.runvision.utils.CameraHelp;
 import com.runvision.utils.DateTimeUtils;
 import com.runvision.utils.FileUtils;
 import com.runvision.utils.IDUtils;
-import com.runvision.utils.LogUtil;
 import com.runvision.utils.RSAUtils;
 import com.runvision.utils.SPUtil;
 import com.runvision.utils.SharedPreferencesHelper;
@@ -53,9 +61,13 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import customview.ConfirmDialog;
 import es.dmoral.toasty.Toasty;
 import okhttp3.Call;
 import okhttp3.MediaType;
+import feature.Callback;
+import util.UpdateAppReceiver;
+import util.UpdateAppUtils;
 
 /**
  * 登录
@@ -102,6 +114,8 @@ public class LoginActivity extends FragmentActivity {
 
     Gson gson = new Gson();
 
+    private BroadcastReceiver receiver = new UpdateAppReceiver();
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -116,6 +130,11 @@ public class LoginActivity extends FragmentActivity {
         faceSP = new SharedPreferencesHelper(mContext, "faceInfo");
         initListener();
         initData();
+
+        // 动态注册receiver
+        IntentFilter intentFilter = new IntentFilter("teprinciple.update");
+        registerReceiver(receiver,intentFilter);
+        checkAndUpdate();
     }
 
     private void initData() {
@@ -417,6 +436,61 @@ public class LoginActivity extends FragmentActivity {
     protected void onDestroy() {
         super.onDestroy();
         android.os.Debug.stopMethodTracing();
+        unregisterReceiver(receiver);
     }
 
+    private void checkAndUpdate() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            update3();
+        } else {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED) {
+                update3();
+            } else {//申请权限
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+            }
+        }
+    }
+
+    //基本更新
+    private void update2() {
+        UpdateAppUtils.from(this)
+                .serverVersionCode(2)
+                .serverVersionName("1.0.1")
+                .apkPath(Const.APK_UPDATE_PATH)
+                .updateInfo("1.修复若干bug\n2.美化部分页面\n")
+                .update();
+    }
+
+    //通过浏览器下载
+    private void update3() {
+        UpdateAppUtils.from(this)
+                .serverVersionCode(1)
+                .serverVersionName("1.0.0")
+                .apkPath(Const.APK_UPDATE_PATH)
+                .downloadBy(UpdateAppUtils.DOWNLOAD_BY_BROWSER)
+                .update();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        switch (requestCode) {
+            case 1:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    update3();
+                } else {
+                    new ConfirmDialog(this, position -> {
+                        if (position==1){
+                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                            intent.setData(Uri.parse("package:" + getPackageName())); // 根据包名打开对应的设置界面
+                            startActivity(intent);
+                        }
+                    }).setContent("暂无读写SD卡权限\n是否前往设置？").show();
+                }
+                break;
+        }
+    }
 }
