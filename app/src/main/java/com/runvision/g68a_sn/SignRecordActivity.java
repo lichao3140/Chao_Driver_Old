@@ -6,8 +6,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
-
 import com.runvision.adapter.CardRecordHolder;
 import com.runvision.bean.DaoSession;
 import com.runvision.bean.IDCard;

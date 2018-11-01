@@ -292,7 +292,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     /*每天重启操作*/
                     DateFormat df = new SimpleDateFormat("HH:mm:ss");
                     if (df.format(new Date()).equals("02:00:00")) {
-                        Log.i("zhuhuilong", "data" + df.format(new Date()));
                         rebootSU();
                     }
 
@@ -341,18 +340,16 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                         mHandler.removeMessages(Const.MSG_FACE);
                     }
                     if (faceDetectTask != null) {
-                        if (faceDetectTask.faceflag == true)//检测到有人脸
-                        {
+                        if (faceDetectTask.faceflag == true) {//检测到有人脸
                             logshowflag = 0;
                             if (SerialPort.Fill_in_light == false) {
                                 SerialPort.openLED();
                             }
                         }
                     }
-                    if (SerialPort.Fill_in_light == true) {   //补光灯
+                    if (SerialPort.Fill_in_light == true) { //补光灯
                         timingnum++;
                         if (timingnum >= 100) {
-                            Log.i("zhuhuilong", "Fill_in_light:" + SerialPort.Fill_in_light);
                             SerialPort.Fill_in_light = false;
                             timingnum = 0;
                         }
@@ -375,7 +372,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                         Const.BATCH_IMPORT_TEMPLATE = false;
                         Const.BATCH_FLAG = 2;
                         showToast("正在导入模板,停止比对！");
-                        // Toast.makeText(mContext, "正在导入模板", Toast.LENGTH_SHORT).show();
                     }
                     if ((template >= 5) || (Const.VMS_BATCH_IMPORT_TEMPLATE == true)) {
                         if (faceDetectTask != null) {
@@ -403,7 +399,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
                     if ((templatenum == 20) || (Const.VMS_TEMPLATE == true)) {
                         Const.VMS_TEMPLATE = false;
-                        Log.i("Gavin_debug", "templatenum==20");
                         promptshow_xml.setVisibility(View.GONE);
                         cancelToast();
                         ReaderCardFlag = true;//1:1
@@ -550,12 +545,9 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     //  progesss1.setProgress(b);
                     if (bacthOk1 + bacthOk2 + bacthOk3 == mSum) {
                         // batchDialog.dismiss();
-                        mHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                Const.VMS_TEMPLATE = true;
-                                Const.VMS_BATCH_IMPORT_TEMPLATE = false;
-                            }
+                        mHandler.postDelayed(() -> {
+                            Const.VMS_TEMPLATE = true;
+                            Const.VMS_BATCH_IMPORT_TEMPLATE = false;
                         }, 2000);
 
                     }
@@ -569,12 +561,9 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     // progesss2.setProgress(b2);
                     if (bacthOk1 + bacthOk2 + bacthOk3 == mSum) {
                         // batchDialog.dismiss();
-                        mHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                Const.VMS_TEMPLATE = true;
-                                Const.VMS_BATCH_IMPORT_TEMPLATE = false;
-                            }
+                        mHandler.postDelayed(() -> {
+                            Const.VMS_TEMPLATE = true;
+                            Const.VMS_BATCH_IMPORT_TEMPLATE = false;
                         }, 2000);
 
                     }
@@ -588,12 +577,9 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     //  progesss3.setProgress(b3);
                     if (bacthOk1 + bacthOk2 + bacthOk3 == mSum) {
                         // batchDialog.dismiss();
-                        mHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                Const.VMS_TEMPLATE = true;
-                                Const.VMS_BATCH_IMPORT_TEMPLATE = false;
-                            }
+                        mHandler.postDelayed(() -> {
+                            Const.VMS_TEMPLATE = true;
+                            Const.VMS_BATCH_IMPORT_TEMPLATE = false;
                         }, 2000);
                     }
                     break;
@@ -841,23 +827,20 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 final Bitmap cardBmp = IDPhotoHelper.Bgr2Bitmap(buf);
                 if (cardBmp != null) {
                     synchronized (this) {
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                long start = System.currentTimeMillis();
-                                faceComperFrame(cardBmp);
-                                AppData.getAppData().setName(idCardInfo.getName());
-                                AppData.getAppData().setSex(idCardInfo.getSex());
-                                AppData.getAppData().setNation(idCardInfo.getNation());
-                                AppData.getAppData().setBirthday(idCardInfo.getBirth());
-                                AppData.getAppData().setAddress(idCardInfo.getAddress());
-                                AppData.getAppData().setCardNo(idCardInfo.getId());
-                                AppData.getAppData().setCardBmp(cardBmp);
-                                Message msg = new Message();
-                                msg.obj = 5;
-                                msg.what = Const.COMPER_FINIASH;
-                                mHandler.sendMessage(msg);
-                            }
+                        new Thread(() -> {
+                            long start = System.currentTimeMillis();
+                            faceComperFrame(cardBmp);
+                            AppData.getAppData().setName(idCardInfo.getName());
+                            AppData.getAppData().setSex(idCardInfo.getSex());
+                            AppData.getAppData().setNation(idCardInfo.getNation());
+                            AppData.getAppData().setBirthday(idCardInfo.getBirth());
+                            AppData.getAppData().setAddress(idCardInfo.getAddress());
+                            AppData.getAppData().setCardNo(idCardInfo.getId());
+                            AppData.getAppData().setCardBmp(cardBmp);
+                            Message msg = new Message();
+                            msg.obj = 5;
+                            msg.what = Const.COMPER_FINIASH;
+                            mHandler.sendMessage(msg);
                         }).start();
                     }
                 } else {
@@ -927,7 +910,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             String action = intent.getAction();
             if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
                 Log.e(TAG, "拔出usb了");
-                UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
                 if (device != null) {
                     Log.e(TAG, "设备的ProductId值为：" + device.getProductId());
                     Log.e(TAG, "设备的VendorId值为：" + device.getVendorId());
@@ -943,7 +926,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 }
             } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
                 Log.e(TAG, "插入usb了");
-                UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
                 if (device.getProductId() == PID && device.getVendorId() == VID) {
                     // 读卡器
                     startIDCardReader();
@@ -973,8 +956,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         mContext.registerReceiver(mUsbReceiver, filter);
 
         for (UsbDevice device : musbManager.getDeviceList().values()) {
-            if (device.getVendorId() == VID && device.getProductId() == PID)
-            {
+            if (device.getVendorId() == VID && device.getProductId() == PID) {
                 Intent intent = new Intent(ACTION_USB_PERMISSION);
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, 0, intent, 0);
                 musbManager.requestPermission(device, pendingIntent);
@@ -1702,7 +1684,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     msg.what = Const.UPDATE_UI;
                     mHandler.sendMessage(msg);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
@@ -1880,10 +1861,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             return;
         }
 
-        //vms_Import_template=true;
-
         Const.VMS_BATCH_IMPORT_TEMPLATE = true;
-        // Const.BATCH_FLAG=1;
 
         System.out.println("一共：" + mSum);
         //将文件数据分成三个集合
@@ -2105,50 +2083,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         }
         return false;
     }
-
-    /**
-     * 退出读卡状态
-     */
-    private Runnable cancelCardRunnable = () -> {
-        try {
-            //处理icCard
-            Log.e("gzy", "接收到的串口数据为: " + icCard);
-
-            final byte[] bytes = SlecProtocol.asciiToHex(SlecProtocol.hexToByteArray(icCard));
-            if (bytes.length > 5) {
-                Log.e("gzy", "接收转换: " + SlecProtocol.bytesToHexString2(bytes, bytes.length) +
-                        "--命令：" + bytes[3] +
-                        "--数据长度：" + bytes[5] +
-                        "--数据：" + (bytes[5] == 0 ? "没有数据" : bytes[6])
-                );
-                switch (bytes[3]) {
-                    case 1:
-                        if (bytes[6] == 0) {
-                            Log.e("gzy", "run: 发送开门指令成功");
-                        } else {
-                            Log.e("gzy", "run: 发送开门指令失败");
-                        }
-                        break;
-                    case 2:
-                        //刷卡
-                        //6-9是用户id，10-13是卡号
-                        if (bytes.length > 13) {
-                            final byte[] card = new byte[4];
-                            for (int i = 0; i < card.length; i++) {
-                                card[i] = bytes[10 + i];
-                            }
-                        }
-                        break;
-                    default:
-                }
-            }
-            icCard = "";
-        } catch (Exception e2) {
-            e2.printStackTrace();
-            icCard = "";
-        }
-        icCard = "";
-    };
 
     /**
      * 网络请求考勤参数
