@@ -2,48 +2,65 @@ package com.runvision.adapter;
 
 import android.util.Log;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
-import com.runvision.bean.Consumption;
+import com.runvision.bean.Sign;
 import com.runvision.g68a_sn.R;
+import com.runvision.utils.TimeUtils;
+
 import cn.lemon.view.adapter.BaseViewHolder;
 
-public class CardRecordHolder extends BaseViewHolder<Consumption> {
+public class CardRecordHolder extends BaseViewHolder<Sign> {
 
-    private TextView name;
+    private ImageView image;
     private TextView type;
-    private TextView consumeNum;
-    private TextView remainNum;
-    private TextView consumeAddress;
+    private TextView name;
+    private TextView sex;
+    private TextView cardNo;
     private TextView time;
+
+    private TextView name_type, name_name, name_sex, name_card_no, name_time;
 
     public CardRecordHolder(ViewGroup parent) {
         super(parent, R.layout.holder_consume);
     }
 
     @Override
-    public void setData(final Consumption object) {
+    public void setData(final Sign object) {
         super.setData(object);
-        name.setText("Demo");
-        type.setText(object.getLx());
-        consumeNum.setText("消费金额：" + object.getJe());
-        remainNum.setText("卡里余额：" + object.getYe());
-        consumeAddress.setText(object.getSh());
-        time.setText(object.getSj());
+        name_type.setText("打卡类型:");
+        name_name.setText("姓名:");
+        name_sex.setText("性别:");
+        name_card_no.setText("身份证号:");
+        name_time.setText("打卡时间:");
+
+        image.setImageBitmap(object.getImageId());
+        name.setText(object.getName());
+        type.setText("签到");
+        sex.setText(object.getGender());
+        cardNo.setText(object.getCardNo());
+        time.setText(TimeUtils.getYearMonth() + "\t" + object.getSigntime());
     }
 
     @Override
     public void onInitializeView() {
         super.onInitializeView();
-        name = findViewById(R.id.name);
-        type = findViewById(R.id.type);
-        consumeNum = findViewById(R.id.consume_num);
-        remainNum = findViewById(R.id.remain_num);
-        consumeAddress = findViewById(R.id.consume_address);
-        time = findViewById(R.id.time);
+        image = findViewById(R.id.iv_sign_image);
+        type = findViewById(R.id.tv_sign_type);
+        name = findViewById(R.id.tv_sign_name);
+        sex = findViewById(R.id.tv_sign_sex);
+        cardNo = findViewById(R.id.tv_sign_card_no);
+        time = findViewById(R.id.tv_sign_time);
+
+        name_type = findViewById(R.id.name_type);
+        name_name = findViewById(R.id.name_name);
+        name_sex = findViewById(R.id.name_sex);
+        name_card_no = findViewById(R.id.name_card_no);
+        name_time = findViewById(R.id.name_time);
     }
 
     @Override
-    public void onItemViewClick(Consumption object) {
+    public void onItemViewClick(Sign object) {
         super.onItemViewClick(object);
         //点击事件
         Log.i("CardRecordHolder","onItemViewClick");

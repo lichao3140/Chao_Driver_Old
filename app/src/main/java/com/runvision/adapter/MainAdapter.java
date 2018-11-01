@@ -8,9 +8,7 @@ import android.widget.TextView;
 import com.runvision.g68a_sn.R;
 import java.util.List;
 
-/**
- * Created by YOLANDA on 2016/7/22.
- */
+
 public class MainAdapter extends BaseAdapter<MainAdapter.ViewHolder> {
 
     private List<String> mDataList;

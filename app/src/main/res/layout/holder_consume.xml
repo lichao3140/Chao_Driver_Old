@@ -17,76 +17,147 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp"
-            android:layout_marginLeft="16dp"
-            android:layout_marginRight="16dp"
-            android:layout_marginTop="4dp"
             android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/name"
-                android:layout_width="0dp"
+            <ImageView
+                android:id="@+id/iv_sign_image"
+                android:layout_width="@dimen/x80"
+                android:layout_height="@dimen/y70"
+                android:adjustViewBounds="true"
+                android:layout_gravity="center"
+                android:scaleType="centerCrop" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textColor="@color/blue"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                tools:text="林龙鑫" />
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/type"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/colorAccent"
-                android:textSize="16sp"
-                tools:text="消费" />
-        </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/consume_num"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="16dp"
-            android:layout_marginTop="4dp"
-            android:textSize="14sp"
-            tools:text="消费金额：6.7" />
+                    <TextView
+                        android:id="@+id/name_type"
+                        android:layout_width="132dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/blue"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        tools:text="打卡类型:" />
 
-        <TextView
-            android:id="@+id/remain_num"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="16dp"
-            android:layout_marginTop="4dp"
-            android:textSize="14sp"
-            tools:text="卡里余额：99.5" />
+                    <TextView
+                        android:id="@+id/tv_sign_type"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/colorAccent"
+                        android:textSize="16sp"
+                        tools:text="签到" />
+                </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="16dp"
-            android:layout_marginRight="16dp"
-            android:layout_marginTop="4dp"
-            android:orientation="horizontal">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/consume_address"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                tools:text="兴业苑/小燕子超市" />
+                    <TextView
+                        android:id="@+id/name_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        tools:text="姓名:" />
 
-            <TextView
-                android:id="@+id/time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                tools:text="2015-12-01 09:56" />
+                    <TextView
+                        android:id="@+id/tv_sign_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="李超" />
+                </LinearLayout>
 
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/name_sex"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        tools:text="性别:" />
+
+                    <TextView
+                        android:id="@+id/tv_sign_sex"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="男" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/name_card_no"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        tools:text="身份证号:" />
+
+                    <TextView
+                        android:id="@+id/tv_sign_card_no"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="431023********5114" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/name_time"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        tools:text="打卡时间:" />
+
+                    <TextView
+                        android:id="@+id/tv_sign_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="2018-11-01 09:56" />
+
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginTop="8dp"
-            android:background="@color/darkgreen" />
+            android:background="@color/palevioletred" />
     </LinearLayout>
 </android.support.v7.widget.CardView>
