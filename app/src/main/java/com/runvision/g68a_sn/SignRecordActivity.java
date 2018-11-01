@@ -6,6 +6,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.View;
+
 import com.runvision.adapter.CardRecordHolder;
 import com.runvision.bean.DaoSession;
 import com.runvision.bean.IDCard;
@@ -42,7 +44,10 @@ public class SignRecordActivity extends AppCompatActivity {
         idCardDao = daoSession.getIDCardDao();
 
         Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle("考勤记录");
+        toolbar.setNavigationIcon(R.mipmap.ic_back);
         setSupportActionBar(toolbar);
+        toolbar.setNavigationOnClickListener(v -> finish());
 
         mRecyclerView = findViewById(R.id.recycler_view);
         mRecyclerView.setSwipeRefreshColors(0xFF437845, 0xFFE44F98, 0xFF2FAC21);
@@ -97,5 +102,10 @@ public class SignRecordActivity extends AppCompatActivity {
             signList.add(sd);
         }
         return signList;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 }
