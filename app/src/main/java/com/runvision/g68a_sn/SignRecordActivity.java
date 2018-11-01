@@ -53,7 +53,7 @@ public class SignRecordActivity extends AppCompatActivity {
         mAdapter = new MultiTypeAdapter(this);
         mRecyclerView.setAdapter(mAdapter);
         mRecyclerView.addRefreshAction(() -> getData(true));
-        mRecyclerView.addLoadMoreAction(() -> getData(false));
+        mRecyclerView.addLoadMoreAction(() -> getData(true));
         mRecyclerView.addLoadMoreErrorAction(() -> getData(false));
         mRecyclerView.post(() -> {
             mRecyclerView.showSwipeRefresh();
@@ -67,11 +67,13 @@ public class SignRecordActivity extends AppCompatActivity {
     public void getData(final boolean isRefresh) {
         if (isRefresh) {
             mPage = 1;
+            mAdapter.showNoMore();
         } else {
             mPage++;
         }
         if (mPage == 3) {
-            mAdapter.showLoadMoreError();
+            mAdapter.showNoMore();
+//            mAdapter.showLoadMoreError();
             return;
         }
         mRecyclerView.postDelayed(() -> {
@@ -85,6 +87,7 @@ public class SignRecordActivity extends AppCompatActivity {
             }
             if (isRefresh) {
                 mRecyclerView.getRecyclerView().scrollToPosition(0);
+                mAdapter.showNoMore();
             }
         }, 1000);
     }
