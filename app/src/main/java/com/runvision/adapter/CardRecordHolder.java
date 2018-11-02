@@ -39,7 +39,7 @@ public class CardRecordHolder extends BaseViewHolder<Sign> {
         type.setText("签到");
         sex.setText(object.getGender());
         cardNo.setText(object.getCardNo());
-        time.setText(TimeUtils.getYearMonth() + "\t" + object.getSigntime());
+        time.setText(object.getSigntime());
     }
 
     @Override

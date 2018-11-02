@@ -218,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     //考勤课程选择
     private String select_index;
     private int selectId;
-    private IDCardDao idCardDao;
+    public static IDCardDao idCardDao;
     private List<IDCard> idCards;
     private List<Sign> signList;
     private SignAdapter signadapter;
@@ -605,7 +605,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         DaoSession daoSession = application.getDaoSession();
         idCardDao = daoSession.getIDCardDao();
 
-        initData();
+//        initData();
         initView();
 
         application = (MyApplication) getApplication();
@@ -770,8 +770,8 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
         //身份证打卡显示
         sign_listView = findViewById(R.id.lv_sign);
-        signadapter = new SignAdapter(mContext, R.layout.signin_item, signList);
-        sign_listView.setAdapter(signadapter);
+//        signadapter = new SignAdapter(mContext, R.layout.signin_item, signList);
+//        sign_listView.setAdapter(signadapter);
 
         //刷卡标记
         pro_xml = findViewById(R.id.pro);
@@ -781,17 +781,17 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
     }
 
-    private void initData() {
-        idCards = new ArrayList<>();
-        signList = new ArrayList<>();
-        idCards = idCardDao.loadAll();
-        for (int i = 0; i < idCards.size(); i++) {
-            IDCard idCard = idCards.get(i);
-            String idnum = idCard.getId_card().substring(0, 6) + "*********" + idCard.getId_card().substring(16, 18);
-            Sign sd = new Sign(idCard.getName(),  CameraHelp.getSmallBitmap(idCard.getIdcardpic()), idCard.getGender(), idnum, idCard.getSign_in());
-            signList.add(sd);
-        }
-    }
+//    private void initData() {
+//        idCards = new ArrayList<>();
+//        signList = new ArrayList<>();
+//        idCards = idCardDao.loadAll();
+//        for (int i = 0; i < idCards.size(); i++) {
+//            IDCard idCard = idCards.get(i);
+//            String idnum = idCard.getId_card().substring(0, 6) + "*********" + idCard.getId_card().substring(16, 18);
+//            Sign sd = new Sign(idCard.getName(),  CameraHelp.getSmallBitmap(idCard.getIdcardpic()), idCard.getGender(), idnum, idCard.getSign_in());
+//            signList.add(sd);
+//        }
+//    }
 
     /**
      * 开启画人脸框线程
@@ -1166,24 +1166,16 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         String gps = SPUtil.getString(Const.DEV_GPS, "");
         String classcode = SPUtil.getString(Const.SELECT_COURSE_NAME, "");
 
-        //选择课程
         if (SPUtil.getString(Const.SELECT_COURSE_NAME, "").equals("")) {
             playMusic(R.raw.no_select_coures);
             Log.i("lichao", "没有选择课程");
         } else if (timecompare.TimeCompare(AppData.getAppData().getInstarttime(), AppData.getAppData().getInstarttime(), timecompare.getSystemTime())) {
             playMusic(R.raw.no_sign_time);
             Log.i("lichao", "签到时间未到");
-        } else if (timecompare.TimeCompare(AppData.getAppData().getInendtime(), AppData.getAppData().getOutstarttime(), timecompare.getSystemTime())) {
-            playMusic(R.raw.sign_time_over);
-            Log.i("lichao", "签到已过，签退未到");
-        } else if (timecompare.TimeCompare(AppData.getAppData().getOutendtime(), AppData.getAppData().getOutendtime(), timecompare.getSystemTime())) {
-            playMusic(R.raw.sign_out_time_over);
-            Log.i("lichao", "签退时间已过");
         } else if (timecompare.TimeCompare(AppData.getAppData().getInstarttime(), AppData.getAppData().getInendtime(), timecompare.getSystemTime())) {
             Log.i("lichao", "正常签到");
             if (AppData.getAppData().getOneFaceBmp() != null && AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE)) {
                 str = "成功";
-                playMusic(R.raw.sign_success);
                 isSuccessComper.setImageResource(R.mipmap.icon_tg);
                 faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
 
@@ -1198,30 +1190,40 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
                 }
 
+                String snapPath = Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg";
+                String cardPath = Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID + ".jpg";
+
                 //插入数据库
                 Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
                 User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
                 user.setRecord(record);
                 MyApplication.faceProvider.addRecord(user);
 
+                //签到接口
                 HttpStudent.Stulogin(mContext, devnum, TimeUtils.getCurrentTime(), AppData.getAppData().getCardNo(), "1", gps,
                         CameraHelp.bitmapToBase64(CameraHelp.getSmallBitmap(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg")),
-                        classcode, stu_sn, AppData.getAppData().getName());
+                        classcode, stu_sn, AppData.getAppData().getName(), AppData.getAppData().getSex(), snapPath, cardPath);
 
-                IDCard idCard = new IDCard();
-                idCard.setName(AppData.getAppData().getName());
-                idCard.setGender(AppData.getAppData().getSex());
-                idCard.setId_card(AppData.getAppData().getCardNo());
-                idCard.setFacepic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg");
-                idCard.setIdcardpic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID + ".jpg");
-                idCard.setSign_in(String.valueOf(timecompare.getSystemTime()));
-                idCard.setSn(UUIDUtil.getUniqueID(mContext) + TimeUtils.getTime13());
-                idCardDao.insert(idCard);
+//                IDCard idCard = new IDCard();
+//                idCard.setName(AppData.getAppData().getName());
+//                idCard.setGender(AppData.getAppData().getSex());
+//                idCard.setId_card(AppData.getAppData().getCardNo());
+//                idCard.setFacepic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg");
+//                idCard.setIdcardpic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID + ".jpg");
+//                idCard.setSign_in(String.valueOf(timecompare.getSystemTime()));
+//                idCard.setSn(UUIDUtil.getUniqueID(mContext) + TimeUtils.getTime13());
+//                idCardDao.insert(idCard);
 
                 oneVsMoreView.setVisibility(View.GONE);
                 alert.setVisibility(View.VISIBLE);
             }
-        } else if (timecompare.TimeCompare(AppData.getAppData().getOutstarttime(), AppData.getAppData().getOutendtime(), timecompare.getSystemTime())) {
+        } else if (timecompare.TimeCompare(AppData.getAppData().getInendtime(), AppData.getAppData().getOutstarttime(), timecompare.getSystemTime())) {
+            playMusic(R.raw.sign_time_over);
+            Log.i("lichao", "签到已过，签退未到");
+        } else if (timecompare.TimeCompare(AppData.getAppData().getOutendtime(), AppData.getAppData().getOutendtime(), timecompare.getSystemTime())) {
+            playMusic(R.raw.sign_out_time_over);
+            Log.i("lichao", "签退时间已过");
+        }  else if (timecompare.TimeCompare(AppData.getAppData().getOutstarttime(), AppData.getAppData().getOutendtime(), timecompare.getSystemTime())) {
             Log.i("lichao", "正常签退");
             if (AppData.getAppData().getOneFaceBmp() != null && AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE)) {
                 str = "成功";
@@ -1246,105 +1248,21 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 user.setRecord(record);
                 MyApplication.faceProvider.addRecord(user);
 
-                HttpStudent.Stulogout(mContext, devnum, TimeUtils.getCurrentTime(), AppData.getAppData().getCardNo(), "1", gps,
-                        CameraHelp.bitmapToBase64(CameraHelp.getSmallBitmap(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg")),
-                        classcode, stu_sn, 0, AppData.getAppData().getName());
 
-                //查询出SN
-                IDCard delete_sn = idCardDao.queryBuilder().where(IDCardDao.Properties.Id_card.eq(AppData.getAppData().getCardNo())).unique();
-                if (delete_sn != null) {
-                    idCardDao.deleteByKey(delete_sn.getId());
-                }
+
+//                HttpStudent.Stulogout(mContext, devnum, TimeUtils.getCurrentTime(), AppData.getAppData().getCardNo(), "1", gps,
+//                        CameraHelp.bitmapToBase64(CameraHelp.getSmallBitmap(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg")),
+//                        classcode, stu_sn, 0, AppData.getAppData().getName());
+//
+//                //查询出SN
+//                IDCard delete_sn = idCardDao.queryBuilder().where(IDCardDao.Properties.Id_card.eq(AppData.getAppData().getCardNo())).unique();
+//                if (delete_sn != null) {
+//                    idCardDao.deleteByKey(delete_sn.getId());
+//                }
 
                 oneVsMoreView.setVisibility(View.GONE);
                 alert.setVisibility(View.VISIBLE);
             }
-        }
-
-        else if (AppData.getAppData().getoneCompareScore() == 0) {
-            str = "失败";
-            isSuccessComper.setImageResource(R.mipmap.icon_sb);
-            if (AppData.getAppData().getOneFaceBmp() == null) {
-                faceBmp_view.setImageResource(R.mipmap.tx);
-                faceBmp_view.setScaleType(ImageView.ScaleType.FIT_XY);
-            } else {
-                faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
-                //保存抓拍图片
-                String snapImageID = IDUtils.genImageName();
-                FileUtils.saveFile(AppData.getAppData().getOneFaceBmp(), snapImageID, TestDate.DGetSysTime() + "_Face");
-                //保存身份证图片
-                String cardImageID = snapImageID + "_card";
-                FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
-
-                Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
-                User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
-                user.setRecord(record);
-                MyApplication.faceProvider.addRecord(user);
-            }
-            playMusic(R.raw.error);
-
-            oneVsMoreView.setVisibility(View.GONE);
-            alert.setVisibility(View.VISIBLE);
-
-        } else if (AppData.getAppData().getoneCompareScore() < SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE) && AppData.getAppData().getOneFaceBmp() != null) {
-            str = "失败";
-            isSuccessComper.setImageResource(R.mipmap.icon_sb);
-            playMusic(R.raw.valid_not_pass);
-            faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
-            //保存抓拍图片
-            String snapImageID = IDUtils.genImageName();
-            FileUtils.saveFile(AppData.getAppData().getOneFaceBmp(), snapImageID, TestDate.DGetSysTime() + "_Face");
-            //保存身份证图片
-            String cardImageID = snapImageID + "_card";
-            FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
-
-            Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
-            User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
-            user.setRecord(record);
-            MyApplication.faceProvider.addRecord(user);
-
-            oneVsMoreView.setVisibility(View.GONE);
-            alert.setVisibility(View.VISIBLE);
-        } else if (AppData.getAppData().getOneFaceBmp() != null && AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE)) {
-            str = "成功";
-            playMusic(R.raw.sign_success);
-            isSuccessComper.setImageResource(R.mipmap.icon_tg);
-            faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
-            GPIOHelper.openDoor(true);
-
-            mHandler.postDelayed(() -> GPIOHelper.openDoor(false), SPUtil.getInt(Const.KEY_OPENDOOR, Const.CLOSE_DOOR_TIME) * 1000);
-
-            //保存抓拍图片
-            String snapImageID = IDUtils.genImageName();
-            if (AppData.getAppData().getOneFaceBmp() != null) {
-                FileUtils.saveFile(AppData.getAppData().getOneFaceBmp(), snapImageID, TestDate.DGetSysTime() + "_Face");
-            }
-            //保存身份证图片
-            String cardImageID = snapImageID + "_card";
-            if (AppData.getAppData().getCardBmp() != null) {
-                FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
-            }
-
-            //插入数据库
-            Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
-            User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
-            user.setRecord(record);
-            MyApplication.faceProvider.addRecord(user);
-
-            IDCard idCard = new IDCard();
-            idCard.setName(AppData.getAppData().getName());
-            idCard.setGender(AppData.getAppData().getSex());
-            idCard.setId_card(AppData.getAppData().getCardNo());
-            idCard.setFacepic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg");
-            idCard.setIdcardpic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID + ".jpg");
-            idCard.setSign_in(String.valueOf(timecompare.getSystemTime()));
-            idCard.setSn(UUIDUtil.getUniqueID(mContext) + TimeUtils.getTime13());
-            idCardDao.insert(idCard);
-
-            mHandler.postDelayed(() -> GPIOHelper.openDoor(false), 1000);
-            oneVsMoreView.setVisibility(View.GONE);
-            alert.setVisibility(View.VISIBLE);
-
         } else {
             playMusic(R.raw.no_cours_time);
             oneVsMoreView.setVisibility(View.GONE);
