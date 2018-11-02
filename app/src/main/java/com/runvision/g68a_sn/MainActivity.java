@@ -1250,9 +1250,8 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                         CameraHelp.bitmapToBase64(CameraHelp.getSmallBitmap(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg")),
                         classcode, stu_sn, 0, AppData.getAppData().getName());
 
-
+                //查询出SN
                 IDCard delete_sn = idCardDao.queryBuilder().where(IDCardDao.Properties.Id_card.eq(AppData.getAppData().getCardNo())).unique();
-                Log.e("lichao", "delete_sn" + delete_sn);
                 if (delete_sn != null) {
                     idCardDao.deleteByKey(delete_sn.getId());
                 }

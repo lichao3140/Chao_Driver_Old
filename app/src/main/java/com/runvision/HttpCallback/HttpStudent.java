@@ -4,10 +4,12 @@ import android.content.Context;
 import android.util.Log;
 import android.widget.Toast;
 import com.google.gson.Gson;
+import com.runvision.bean.LogOutResponse;
 import com.runvision.bean.LoginResponse;
 import com.runvision.bean.Stulogin;
 import com.runvision.core.Const;
 import com.runvision.g68a_sn.R;
+import com.runvision.utils.LogUtil;
 import com.runvision.utils.RSAUtils;
 import com.runvision.utils.SPUtil;
 import com.runvision.utils.TimeUtils;
@@ -105,7 +107,7 @@ public class HttpStudent {
             byte[] ss = sign.getBytes();
             String sign_str = RSAUtils.sign(ss, privateKey);
 
-//            LogUtil.i("lichao", "Stulogin JSON:" + new Gson().toJson(new Stulogin(sign_str, devnum, time, stucode, cardtype, gps, imgstr, classcode, sn, period, studentName, ts)));
+//            LogUtil.i("lichao", "StulogOut JSON:" + new Gson().toJson(new Stulogin(sign_str, devnum, time, stucode, cardtype, gps, imgstr, classcode, sn, period, studentName, ts)));
 
             OkHttpUtils.postString()
                     .url(Const.STULOGOUT + "ts=" + TimeUtils.getTime13() + "&sign=" + sign_str)
@@ -123,12 +125,16 @@ public class HttpStudent {
                             Log.i("lichao", "success:" + response);
                             if (!response.equals("resource/500")) {
                                 Gson gson = new Gson();
-                                LoginResponse gsonLogin = gson.fromJson(response, LoginResponse.class);
-                                if (gsonLogin.getErrorcode() == 0) {
-                                    if (gsonLogin.getMessage().equals("操作成功")) {
+                                LogOutResponse gsonLogOut = gson.fromJson(response, LogOutResponse.class);
+                                if (gsonLogOut.getErrorcode().equals("0")) {
+                                    if (gsonLogOut.getMessage().equals("操作成功")) {
+                                        for (LogOutResponse.DataBean.CompleteDataBean cdb : gsonLogOut.getData().getCompleteData()) {
+                                            Log.e("lichao", "完成科目:" + cdb.getSubject());
+                                            Log.e("lichao", "完成学时:" + cdb.getCompleteHour());
+                                        }
                                         Toasty.success(context, context.getString(R.string.toast_update_success), Toast.LENGTH_SHORT, true).show();
                                     } else {
-                                        Toasty.error(context, context.getString(R.string.toast_update_fail) + gsonLogin.getMessage(), Toast.LENGTH_LONG, true).show();
+                                        Toasty.error(context, context.getString(R.string.toast_update_fail) + gsonLogOut.getMessage(), Toast.LENGTH_LONG, true).show();
                                     }
                                 } else {
                                     Toasty.error(context, context.getString(R.string.toast_update_fail), Toast.LENGTH_LONG, true).show();
