@@ -8,6 +8,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -15,6 +17,7 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -94,6 +97,11 @@ import com.runvision.utils.TimeCompareUtil;
 import com.runvision.utils.TimeUtils;
 import com.runvision.utils.UUIDUtil;
 import com.runvision.webcore.ServerManager;
+import com.telpo.tps550.api.TelpoException;
+import com.telpo.tps550.api.idcard.IdCard;
+import com.telpo.tps550.api.idcard.IdentityInfo;
+import com.telpo.tps550.api.util.StringUtil;
+import com.telpo.tps550.api.util.SystemUtil;
 import com.zhy.http.okhttp.OkHttpUtils;
 import com.zhy.http.okhttp.callback.StringCallback;
 import com.zkteco.android.IDReader.IDPhotoHelper;
@@ -190,6 +198,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     private UsbManager musbManager = null;
     private boolean ReaderCardFlag = true;
     private final String ACTION_USB_PERMISSION = "com.example.scarx.idcardreader.USB_PERMISSION";
+    private GetIDInfoTask mAsyncTask;
 
     // ------------------------------这个按钮是设置或以开关的----------------------------------
     //这个按钮是设置或以开关的
@@ -339,21 +348,21 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                         mHandler.removeMessages(Const.COMPER_END);
                         mHandler.removeMessages(Const.MSG_FACE);
                     }
-                    if (faceDetectTask != null) {
-                        if (faceDetectTask.faceflag == true) {//检测到有人脸
-                            logshowflag = 0;
-                            if (SerialPort.Fill_in_light == false) {
-                                SerialPort.openLED();
-                            }
-                        }
-                    }
-                    if (SerialPort.Fill_in_light == true) { //补光灯
-                        timingnum++;
-                        if (timingnum >= 100) {
-                            SerialPort.Fill_in_light = false;
-                            timingnum = 0;
-                        }
-                    }
+//                    if (faceDetectTask != null) {
+//                        if (faceDetectTask.faceflag == true) {//检测到有人脸
+//                            logshowflag = 0;
+//                            if (SerialPort.Fill_in_light == false) {
+//                                SerialPort.openLED();
+//                            }
+//                        }
+//                    }
+//                    if (SerialPort.Fill_in_light == true) { //补光灯
+//                        timingnum++;
+//                        if (timingnum >= 100) {
+//                            SerialPort.Fill_in_light = false;
+//                            timingnum = 0;
+//                        }
+//                    }
 
                     /*导入模板显示*/
                     if ((Const.BATCH_IMPORT_TEMPLATE == true) && (Const.BATCH_FLAG == 1)) {
@@ -427,6 +436,10 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 case Const.MSG_FACE://开启一比n处理
                     FaceInfo info = (FaceInfo) msg.obj;
                     openOneVsMoreThread(info);
+                    break;
+                case Const.MSG_READ_CARD:
+                    mAsyncTask = new GetIDInfoTask();
+                    mAsyncTask.execute();
                     break;
                 case Const.READ_CARD://收到读卡器的信息
                     mHandler.removeMessages(Const.COMPER_FINIASH);
@@ -620,6 +633,12 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        finishSign = false;
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         // stratThread();
@@ -696,6 +715,13 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);//关闭手势滑动
         }
         super.onRestart();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        isSerialOpen = false;
+        finishSign = true;
     }
 
     @Override
@@ -792,6 +818,12 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 //            signList.add(sd);
 //        }
 //    }
+
+    private void initReadCard() {
+        Message msg = new Message();
+        msg.what = Const.MSG_READ_CARD;
+        mHandler.sendMessage(msg);
+    }
 
     /**
      * 开启画人脸框线程
@@ -996,7 +1028,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                             msg.what = Const.READ_CARD;
                             msg.obj = idCardInfo;
                             mHandler.sendMessage(msg);
-
                         }
                     }
                 }
@@ -1082,6 +1113,8 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
                 oneVsMoreView.setVisibility(View.VISIBLE);
                 playMusic(R.raw.success);
+                initReadCard();
+
                 mHandler.postDelayed(() -> oneVsMoreView.setVisibility(View.GONE), 1000);
 
 
@@ -1571,7 +1604,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                                 mHandler.sendMessage(msg4);
 
                             }
-                            //handler.removeMessages(0);
                         }
                     } catch (InterruptedException e) {
                         break;
@@ -1732,7 +1764,65 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             socketThread.close();
             socketThread = null;
         }
+    }
 
+    /******************串口身份证读卡******************/
+    private IdentityInfo info;
+    private Bitmap bitmap;
+    private byte[] image;
+    private boolean isSerialOpen = false;
+    private boolean finishSign = false;
+
+    private class GetIDInfoTask extends AsyncTask<Void, Integer, TelpoException> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            info = null;
+            bitmap = null;
+        }
+
+        @Override
+        protected TelpoException doInBackground(Void... voids) {
+            TelpoException result = null;
+            try {
+                if(!isSerialOpen || finishSign) {
+                    IdCard.open(115200,"/dev/ttyS3");
+                    isSerialOpen = true;
+                }
+                info =  IdCard.checkIdCard(2000);
+                if ("".equals(info.getName())) {
+                    return new TelpoException();
+                }
+                image = IdCard.getIdCardImage();
+                bitmap = IdCard.decodeIdCardImage(image);
+            } catch (TelpoException e) {
+                e.printStackTrace();
+                result = e;
+            } finally {
+
+            }
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(TelpoException result) {
+            super.onPostExecute(result);
+            if (result == null) {
+                if(finishSign) {
+                    IdCard.close();
+                }
+                if(!info.getName().contains("timeout")) {
+                    Log.i(TAG, info.getName());
+                    Log.i(TAG, info.getSex());
+                    Log.i(TAG, info.getBorn());
+                    Log.i(TAG, info.getNo());
+                }
+                initReadCard();
+            } else {
+                initReadCard();
+            }
+        }
     }
 
     //上传的所有数据长度大小

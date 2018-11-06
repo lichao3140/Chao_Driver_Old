@@ -98,4 +98,5 @@ dependencies {
     implementation files('libs/ageestimation.jar')
     implementation files('libs/genderestimation.jar')
     implementation files('libs/BASE64Encoder.jar')
+    implementation files('libs/telpo_api.jar')
 }
