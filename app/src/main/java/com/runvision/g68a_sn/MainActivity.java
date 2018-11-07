@@ -181,7 +181,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
     public boolean comparisonEnd = false;
     //管理员是否登录成功
-    public boolean admin_is_login = AppData.getAppData().getAdmin_login_flag();
+    public boolean admin_is_login = false;
     private int timingnum = 0;
 
     private MyApplication application;
@@ -428,8 +428,10 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     break;
 
                 case Const.MSG_FACE://开启一比n处理
-                    FaceInfo info = (FaceInfo) msg.obj;
-                    openOneVsMoreThread(info);
+                    if (!admin_is_login) {
+                        FaceInfo info = (FaceInfo) msg.obj;
+                        openOneVsMoreThread(info);
+                    }
                     break;
                 case Const.MSG_READ_CARD:
                     mHandler.removeMessages(Const.MSG_READ_CARD);
@@ -656,8 +658,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         startIDCardReader();
         startService(intentService);
 
-        initReadCard();
-
         if (uithread == null) {
             uithread = new UIThread();
             uithread.start();
@@ -669,12 +669,13 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         }
 
         if (admin_is_login) {
+            isOpenOneVsMore = false;
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);//打开手势滑动
         } else {
+            mMyRedThread.startredThread();
+            isOpenOneVsMore = true;
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);//关闭手势滑动
         }
-        mMyRedThread.startredThread();
-        isOpenOneVsMore = true;
     }
 
     @Override
@@ -826,13 +827,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 //        }
 //    }
 
-    private void initReadCard() {
-//        Message msg = new Message();
-//        msg.what = Const.MSG_READ_CARD;
-//        mHandler.sendMessage(msg);
-        mHandler.sendMessageDelayed(mHandler.obtainMessage(Const.MSG_READ_CARD, ""), 0);
-    }
-
     /**
      * 开启画人脸框线程
      */
@@ -850,7 +844,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
      * 开启一个1：N的线程
      */
     private void openOneVsMoreThread(FaceInfo info) {
-        if (!oneVsMoreThreadStauts && isOpenOneVsMore && Infra_red && !admin_is_login) {
+        if (!oneVsMoreThreadStauts && isOpenOneVsMore && Infra_red) {
             oneVsMoreThreadStauts = true;
             OneVsMoreThread thread = new OneVsMoreThread(info);
             thread.start();
@@ -858,7 +852,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     }
 
     /**
-     * 身份证读取
+     * USB身份证读取
      */
     private void toComperFace(final IDCardInfo idCardInfo) {
         if (idCardInfo.getPhotolength() > 0) {
@@ -895,13 +889,17 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         }
     }
 
+    /**
+     * 串口读卡器
+     * @param identityInfo
+     */
     private void toComperFace1(final IdentityInfo identityInfo) {
         if (cardBitmap != null) {
             synchronized (this) {
                 new Thread(() -> {
                     faceComperFrame(cardBitmap);
                     AppData.getAppData().setName(identityInfo.getName());
-                    AppData.getAppData().setSex(identityInfo.getSex());
+                    AppData.getAppData().setSex(identityInfo.getSex().substring(0, 1));
                     AppData.getAppData().setNation(identityInfo.getNation());
                     AppData.getAppData().setBirthday(identityInfo.getBorn());
                     AppData.getAppData().setAddress(identityInfo.getAddress());
@@ -1125,10 +1123,12 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 }
                 GPIOHelper.openDoor(true);
                 HttpAdmin.adminLogin(mContext);
-                if (AppData.getAppData().getAdmin_login_flag()) {
+                if (!admin_is_login) {
+                    //AppData.getAppData().setAdmin_login_flag(true);
                     admin_is_login = true;
                     drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
                 }
+                mHandler.sendMessageDelayed(mHandler.obtainMessage(Const.MSG_READ_CARD, ""), 0);
 
                 mHandler.postDelayed(() -> GPIOHelper.openDoor(false), SPUtil.getInt(Const.KEY_OPENDOOR, Const.CLOSE_DOOR_TIME) * 1000);
 
@@ -1143,10 +1143,8 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
                 oneVsMoreView.setVisibility(View.VISIBLE);
                 playMusic(R.raw.success);
-//                initReadCard();
 
                 mHandler.postDelayed(() -> oneVsMoreView.setVisibility(View.GONE), 1000);
-
 
                 if (socketThread != null) {
                     SendData.sendComperMsgInfo(socketThread, true, Const.TYPE_ONEVSMORE);
@@ -1193,7 +1191,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     }
 
     /**
-     * 1v1显示对比后成功是否窗口
+     * 1vs1显示对比后成功是否窗口
      */
     private void showAlertDialog() {
         String str = "";
@@ -1850,9 +1848,9 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     msg.obj = info;
                     mHandler.sendMessage(msg);
                 }
-                mHandler.sendEmptyMessageDelayed(Const.MSG_READ_CARD, 1000);
+                mHandler.sendEmptyMessageDelayed(Const.MSG_READ_CARD, 2000);
             } else {
-                initReadCard();
+                mHandler.sendMessageDelayed(mHandler.obtainMessage(Const.MSG_READ_CARD, ""), 0);
             }
         }
     }
