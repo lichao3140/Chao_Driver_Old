@@ -81,7 +81,6 @@ public class HttpStudent {
                                 LoginResponse gsonLogin = gson.fromJson(response, LoginResponse.class);
                                 if (gsonLogin.getErrorcode() == 0) {
                                     if (gsonLogin.getMessage().equals("操作成功")) {
-
                                         IDCard idCard = new IDCard();
                                         idCard.setName(studentName);
                                         idCard.setGender(sex);
@@ -91,19 +90,18 @@ public class HttpStudent {
                                         idCard.setSign_in(time);
                                         idCard.setSn(sn);
                                         MainActivity.idCardDao.insert(idCard);
-
                                         playMusic(context, R.raw.sign_success);
                                         Toasty.success(context, context.getString(R.string.toast_update_success), Toast.LENGTH_SHORT, true).show();
                                     } else {
-
+                                        playMusic(context, R.raw.error);
                                         Toasty.warning(context, context.getString(R.string.toast_update_fail) + gsonLogin.getMessage(), Toast.LENGTH_LONG, true).show();
                                     }
                                 } else {
-
-                                    Toasty.error(context, context.getString(R.string.toast_update_fail), Toast.LENGTH_LONG, true).show();
+                                    playMusic(context, R.raw.error);
+                                    Toasty.error(context, context.getString(R.string.toast_update_fail) + gsonLogin.getMessage(), Toast.LENGTH_LONG, true).show();
                                 }
                             } else {
-
+                                playMusic(context, R.raw.error);
                                 Toasty.error(context, context.getString(R.string.toast_server_error), Toast.LENGTH_LONG, true).show();
                             }
                         }

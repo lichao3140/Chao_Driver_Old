@@ -898,7 +898,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             synchronized (this) {
                 new Thread(() -> {
                     faceComperFrame(cardBitmap);
-                    AppData.getAppData().setName(identityInfo.getName());
+                    AppData.getAppData().setName(identityInfo.getName().replace(" ", ""));
                     AppData.getAppData().setSex(identityInfo.getSex().substring(0, 1));
                     AppData.getAppData().setNation(identityInfo.getNation());
                     AppData.getAppData().setBirthday(identityInfo.getBorn());
@@ -1124,7 +1124,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 GPIOHelper.openDoor(true);
                 HttpAdmin.adminLogin(mContext);
                 if (!admin_is_login) {
-                    //AppData.getAppData().setAdmin_login_flag(true);
                     admin_is_login = true;
                     drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
                 }
@@ -1142,7 +1141,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 MyApplication.faceProvider.addRecord(user);
 
                 oneVsMoreView.setVisibility(View.VISIBLE);
-                playMusic(R.raw.success);
+                playMusic(R.raw.admin_login_success);
 
                 mHandler.postDelayed(() -> oneVsMoreView.setVisibility(View.GONE), 1000);
 
@@ -1233,7 +1232,27 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         } else if (timecompare.TimeCompare(AppData.getAppData().getInstarttime(), AppData.getAppData().getInstarttime(), timecompare.getSystemTime())) {
             playMusic(R.raw.no_sign_time);
             Log.i("lichao", "签到时间未到");
-        } else if (timecompare.TimeCompare(AppData.getAppData().getInstarttime(), AppData.getAppData().getInendtime(), timecompare.getSystemTime())) {
+        } else if (AppData.getAppData().getoneCompareScore() == 0) {
+            Log.i("lichao", "屏幕无人脸");
+            isSuccessComper.setImageResource(R.mipmap.icon_sb);
+            if (AppData.getAppData().getOneFaceBmp() == null) {
+                faceBmp_view.setImageResource(R.mipmap.tx);
+                faceBmp_view.setScaleType(ImageView.ScaleType.FIT_XY);
+            } else {
+                faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
+            }
+            playMusic(R.raw.no_face);
+            oneVsMoreView.setVisibility(View.GONE);
+            alert.setVisibility(View.VISIBLE);
+        } else if (AppData.getAppData().getoneCompareScore() < SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE) && AppData.getAppData().getOneFaceBmp() != null) {
+            Log.i("lichao", "人证不一致");
+            isSuccessComper.setImageResource(R.mipmap.icon_sb);
+            playMusic(R.raw.no_face_card);
+            faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
+            oneVsMoreView.setVisibility(View.GONE);
+            alert.setVisibility(View.VISIBLE);
+        }
+        else if (timecompare.TimeCompare(AppData.getAppData().getInstarttime(), AppData.getAppData().getInendtime(), timecompare.getSystemTime())) {
             Log.i("lichao", "正常签到");
             if (AppData.getAppData().getOneFaceBmp() != null && AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE)) {
                 str = "成功";
@@ -1302,13 +1321,11 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 if (AppData.getAppData().getCardBmp() != null) {
                     FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
                 }
-
                 //插入数据库
                 Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
                 User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
                 user.setRecord(record);
                 MyApplication.faceProvider.addRecord(user);
-
 
 
 //                HttpStudent.Stulogout(mContext, devnum, TimeUtils.getCurrentTime(), AppData.getAppData().getCardNo(), "1", gps,
@@ -1331,6 +1348,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         }
 
         if (AppData.getAppData().getoneCompareScore() < SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE) && AppData.getAppData().getOneFaceBmp() != null) {
+            //Log.i("Gavin","人证失败："+socketThread.toString());
             if (socketThread != null) {
                 SendData.sendComperMsgInfo(socketThread, false, Const.TYPE_CARD);
             } else {
@@ -1338,6 +1356,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             }
         }
         if (AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE) && AppData.getAppData().getOneFaceBmp() != null) {
+            //Log.i("Gavin","人证成功："+socketThread.toString());
             if (socketThread != null) {
                 SendData.sendComperMsgInfo(socketThread, true, Const.TYPE_CARD);
             } else {
