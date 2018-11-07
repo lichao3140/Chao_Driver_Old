@@ -87,6 +87,7 @@ public class Const {
     public static final int COMPER_FINIASH = 1006;
     public static final int MSG_FACE = 1007;
     public static final int MSG_READ_CARD = 1008;
+    public static final int READ_CARD_INFO = 1009;
 
     //socket连接超时
     public static final int SOCKET_TIMEOUT = 10;

@@ -8,8 +8,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -76,7 +74,6 @@ import com.runvision.db.Record;
 import com.runvision.db.User;
 import com.runvision.frament.DeviceSetFrament;
 import com.runvision.gpio.GPIOHelper;
-import com.runvision.gpio.SlecProtocol;
 import com.runvision.myview.MyCameraSuf;
 import com.runvision.service.ProximityService;
 import com.runvision.thread.BatchImport;
@@ -100,8 +97,6 @@ import com.runvision.webcore.ServerManager;
 import com.telpo.tps550.api.TelpoException;
 import com.telpo.tps550.api.idcard.IdCard;
 import com.telpo.tps550.api.idcard.IdentityInfo;
-import com.telpo.tps550.api.util.StringUtil;
-import com.telpo.tps550.api.util.SystemUtil;
 import com.zhy.http.okhttp.OkHttpUtils;
 import com.zhy.http.okhttp.callback.StringCallback;
 import com.zkteco.android.IDReader.IDPhotoHelper;
@@ -127,7 +122,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
-import android_serialport_api.SerialPort;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -438,8 +432,20 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     openOneVsMoreThread(info);
                     break;
                 case Const.MSG_READ_CARD:
+                    mHandler.removeMessages(Const.MSG_READ_CARD);
                     mAsyncTask = new GetIDInfoTask();
                     mAsyncTask.execute();
+
+                    break;
+                case Const.READ_CARD_INFO:
+                    mHandler.removeMessages(Const.COMPER_FINIASH);
+                    mHandler.removeMessages(Const.READ_CARD_INFO);
+                    mHandler.removeMessages(Const.COMPER_END);
+                    oneVsMoreView.setVisibility(View.GONE);
+                    home_layout.setVisibility(View.GONE);
+                    pro_xml.setVisibility(View.VISIBLE);
+                    IdentityInfo identityInfo = (IdentityInfo) msg.obj;
+                    toComperFace1(identityInfo);
                     break;
                 case Const.READ_CARD://收到读卡器的信息
                     mHandler.removeMessages(Const.COMPER_FINIASH);
@@ -650,6 +656,8 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         startIDCardReader();
         startService(intentService);
 
+        initReadCard();
+
         if (uithread == null) {
             uithread = new UIThread();
             uithread.start();
@@ -777,7 +785,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         oneVsMore_userName = oneVsMoreView.findViewById(R.id.onevsmore_userName);
         oneVsMore_userID = oneVsMoreView.findViewById(R.id.onevsmore_userID);
         oneVsMore_userType = oneVsMoreView.findViewById(R.id.onevsmore_userType);
-
         //1:1
         alert = findViewById(R.id.alert_xml);
         faceBmp_view = alert.findViewById(R.id.comperFacebm);
@@ -820,9 +827,10 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 //    }
 
     private void initReadCard() {
-        Message msg = new Message();
-        msg.what = Const.MSG_READ_CARD;
-        mHandler.sendMessage(msg);
+//        Message msg = new Message();
+//        msg.what = Const.MSG_READ_CARD;
+//        mHandler.sendMessage(msg);
+        mHandler.sendMessageDelayed(mHandler.obtainMessage(Const.MSG_READ_CARD, ""), 0);
     }
 
     /**
@@ -860,7 +868,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 if (cardBmp != null) {
                     synchronized (this) {
                         new Thread(() -> {
-                            long start = System.currentTimeMillis();
                             faceComperFrame(cardBmp);
                             AppData.getAppData().setName(idCardInfo.getName());
                             AppData.getAppData().setSex(idCardInfo.getSex());
@@ -885,6 +892,29 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         } else {
             Log.i(TAG, "图片数据长度为0");
             showToast("图片数据长度为0" + idCardInfo.getName());
+        }
+    }
+
+    private void toComperFace1(final IdentityInfo identityInfo) {
+        if (cardBitmap != null) {
+            synchronized (this) {
+                new Thread(() -> {
+                    faceComperFrame(cardBitmap);
+                    AppData.getAppData().setName(identityInfo.getName());
+                    AppData.getAppData().setSex(identityInfo.getSex());
+                    AppData.getAppData().setNation(identityInfo.getNation());
+                    AppData.getAppData().setBirthday(identityInfo.getBorn());
+                    AppData.getAppData().setAddress(identityInfo.getAddress());
+                    AppData.getAppData().setCardNo(identityInfo.getNo());
+                    AppData.getAppData().setCardBmp(cardBitmap);
+                    Message msg = new Message();
+                    msg.obj = 5;
+                    msg.what = Const.COMPER_FINIASH;
+                    mHandler.sendMessage(msg);
+                }).start();
+            }
+        } else {
+            Log.i(TAG, "读卡器解码得到的图片为空");
         }
     }
 
@@ -1113,7 +1143,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
                 oneVsMoreView.setVisibility(View.VISIBLE);
                 playMusic(R.raw.success);
-                initReadCard();
+//                initReadCard();
 
                 mHandler.postDelayed(() -> oneVsMoreView.setVisibility(View.GONE), 1000);
 
@@ -1768,8 +1798,8 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
     /******************串口身份证读卡******************/
     private IdentityInfo info;
-    private Bitmap bitmap;
-    private byte[] image;
+    Bitmap cardBitmap;
+    byte[] image;
     private boolean isSerialOpen = false;
     private boolean finishSign = false;
 
@@ -1779,7 +1809,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         protected void onPreExecute() {
             super.onPreExecute();
             info = null;
-            bitmap = null;
+            cardBitmap = null;
         }
 
         @Override
@@ -1795,7 +1825,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     return new TelpoException();
                 }
                 image = IdCard.getIdCardImage();
-                bitmap = IdCard.decodeIdCardImage(image);
+                cardBitmap = IdCard.decodeIdCardImage(image);
             } catch (TelpoException e) {
                 e.printStackTrace();
                 result = e;
@@ -1808,17 +1838,19 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         @Override
         protected void onPostExecute(TelpoException result) {
             super.onPostExecute(result);
-            if (result == null) {
+            if (result == null && cardBitmap != null) {
                 if(finishSign) {
                     IdCard.close();
                 }
-                if(!info.getName().contains("timeout")) {
-                    Log.i(TAG, info.getName());
-                    Log.i(TAG, info.getSex());
-                    Log.i(TAG, info.getBorn());
-                    Log.i(TAG, info.getNo());
+                if(!info.getName().contains("timeout") && ReaderCardFlag == true) {
+                    isOpenOneVsMore = false;
+                    ReaderCardFlag = false;
+                    Message msg = new Message();
+                    msg.what = Const.READ_CARD_INFO;
+                    msg.obj = info;
+                    mHandler.sendMessage(msg);
                 }
-                initReadCard();
+                mHandler.sendEmptyMessageDelayed(Const.MSG_READ_CARD, 1000);
             } else {
                 initReadCard();
             }
