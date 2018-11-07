@@ -96,7 +96,7 @@ public class SignRecordActivity extends AppCompatActivity {
         idCards = new ArrayList<>();
         signList = new ArrayList<>();
         idCards = idCardDao.loadAll();
-        for (int i = 0; i < idCards.size(); i++) {
+        for (int i = idCards.size() - 1; i >= 0 ; i--) {
             IDCard idCard = idCards.get(i);
             String idnum = idCard.getId_card().substring(0, 6) + "*********" + idCard.getId_card().substring(16, 18);
             Sign sd = new Sign(idCard.getName(),  CameraHelp.getSmallBitmap(idCard.getIdcardpic()), idCard.getGender(), idnum, idCard.getSign_in());
