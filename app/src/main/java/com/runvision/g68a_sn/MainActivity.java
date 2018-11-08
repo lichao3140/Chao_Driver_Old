@@ -171,6 +171,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     private boolean TipsFlag = false;
 
     private FaceFramTask faceDetectTask = null;
+    private GetIDInfoTask mAsyncTask = null;
 
     private boolean bStop = false;
 
@@ -192,7 +193,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     private UsbManager musbManager = null;
     private boolean ReaderCardFlag = true;
     private final String ACTION_USB_PERMISSION = "com.example.scarx.idcardreader.USB_PERMISSION";
-    private GetIDInfoTask mAsyncTask;
 
     // ------------------------------这个按钮是设置或以开关的----------------------------------
     //这个按钮是设置或以开关的
@@ -342,21 +342,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                         mHandler.removeMessages(Const.COMPER_END);
                         mHandler.removeMessages(Const.MSG_FACE);
                     }
-//                    if (faceDetectTask != null) {
-//                        if (faceDetectTask.faceflag == true) {//检测到有人脸
-//                            logshowflag = 0;
-//                            if (SerialPort.Fill_in_light == false) {
-//                                SerialPort.openLED();
-//                            }
-//                        }
-//                    }
-//                    if (SerialPort.Fill_in_light == true) { //补光灯
-//                        timingnum++;
-//                        if (timingnum >= 100) {
-//                            SerialPort.Fill_in_light = false;
-//                            timingnum = 0;
-//                        }
-//                    }
 
                     /*导入模板显示*/
                     if ((Const.BATCH_IMPORT_TEMPLATE == true) && (Const.BATCH_FLAG == 1)) {
@@ -649,8 +634,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     @Override
     protected void onResume() {
         super.onResume();
-        // stratThread();
-        // bStop = false;
         IntentFilter usbDeviceStateFilter = new IntentFilter();
         usbDeviceStateFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         usbDeviceStateFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
@@ -838,6 +821,10 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         faceDetectTask = new FaceFramTask(mHandler, mCameraSurfView);
         faceDetectTask.setRuning(true);
         faceDetectTask.execute();
+
+        if (mAsyncTask != null) {
+
+        }
     }
 
     /**
