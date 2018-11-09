@@ -44,6 +44,7 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.arcsoft.facedetection.AFD_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKFace;
 import com.arcsoft.facerecognition.AFR_FSDKMatching;
@@ -62,6 +63,7 @@ import com.runvision.bean.AppData;
 import com.runvision.bean.Atnd;
 import com.runvision.bean.AtndResponse;
 import com.runvision.bean.Cours;
+import com.runvision.bean.CoursDao;
 import com.runvision.bean.DaoSession;
 import com.runvision.bean.FaceInfo;
 import com.runvision.bean.IDCard;
@@ -108,6 +110,7 @@ import com.zkteco.android.biometric.module.idcard.IDCardReader;
 import com.zkteco.android.biometric.module.idcard.IDCardReaderFactory;
 import com.zkteco.android.biometric.module.idcard.exception.IDCardReaderException;
 import com.zkteco.android.biometric.module.idcard.meta.IDCardInfo;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -122,6 +125,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -136,6 +140,16 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         NavigationView.OnNavigationItemSelectedListener, OnDateSetListener {
 
     private static String TAG = MainActivity.class.getSimpleName();
+    @BindView(R.id.info_tv_subject)
+    TextView infoTvSubject;
+    @BindView(R.id.info_tv_classcode)
+    TextView infoTvClasscode;
+    @BindView(R.id.info_tv_coursename)
+    TextView infoTvCoursename;
+    @BindView(R.id.info_tv_coursecode)
+    TextView infoTvCoursecode;
+    @BindView(R.id.info_tv_targetlen)
+    TextView infoTvTargetlen;
 
     private Context mContext;
     private Intent intentService;
@@ -222,6 +236,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     private String select_index;
     private int selectId;
     public static IDCardDao idCardDao;
+    private CoursDao coursDao;
     private List<IDCard> idCards;
     private List<Sign> signList;
     private SignAdapter signadapter;
@@ -412,6 +427,9 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     }
                     break;
 
+                case Const.SELECTED_COURSE:
+                    initSignCourse();
+                    break;
                 case Const.MSG_FACE://开启一比n处理
                     if (!admin_is_login) {
                         FaceInfo info = (FaceInfo) msg.obj;
@@ -422,7 +440,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     mHandler.removeMessages(Const.MSG_READ_CARD);
                     mAsyncTask = new GetIDInfoTask();
                     mAsyncTask.execute();
-
                     break;
                 case Const.READ_CARD_INFO:
                     mHandler.removeMessages(Const.COMPER_FINIASH);
@@ -610,9 +627,11 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         ButterKnife.bind(this);
         DaoSession daoSession = application.getDaoSession();
         idCardDao = daoSession.getIDCardDao();
+        coursDao = daoSession.getCoursDao();
 
 //        initData();
         initView();
+        initSignCourse();
 
         application = (MyApplication) getApplication();
         application.init();
@@ -810,6 +829,26 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 //        }
 //    }
 
+    private void initSignCourse() {
+        String sign_classcode = SPUtil.getString(Const.SELECT_COURSE_NAME, "");
+        if (!sign_classcode.equals("")) {
+            Cours sign_class = coursDao.queryBuilder().where(CoursDao.Properties.Classcode.eq(sign_classcode)).unique();
+            if (sign_class != null) {
+                infoTvSubject.setText(sign_class.getSubject());
+                infoTvClasscode.setText(sign_class.getClasscode());
+                infoTvCoursename.setText(sign_class.getCoursename());
+                infoTvCoursecode.setText(sign_class.getCoursecode());
+                infoTvTargetlen.setText(sign_class.getTargetlen());
+            } else {
+                infoTvSubject.setText("管理员请选择考勤参数");
+                infoTvClasscode.setText("管理员请选择考勤参数");
+                infoTvCoursename.setText("管理员请选择考勤参数");
+                infoTvCoursecode.setText("管理员请选择考勤参数");
+                infoTvTargetlen.setText("管理员请选择考勤参数");
+            }
+        }
+    }
+
     /**
      * 开启画人脸框线程
      */
@@ -878,6 +917,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
     /**
      * 串口读卡器
+     *
      * @param identityInfo
      */
     private void toComperFace1(final IdentityInfo identityInfo) {
@@ -996,7 +1036,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     }
 
     private void RequestDevicePermission() {
-        musbManager = (UsbManager)this.getSystemService(Context.USB_SERVICE);
+        musbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
         IntentFilter filter = new IntentFilter();
         filter.addAction(ACTION_USB_PERMISSION);
         filter.addAction(UsbManager.ACTION_USB_ACCESSORY_ATTACHED);
@@ -1160,15 +1200,15 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             EditText et_confirm_psd = view.findViewById(R.id.et_confirm_psd);
             String confirmPsd = et_confirm_psd.getText().toString();
             String psd = Const.MOBILE_SAFE_PSD;
-            if(!TextUtils.isEmpty(confirmPsd)){
-                if(psd.equals(confirmPsd)) {
+            if (!TextUtils.isEmpty(confirmPsd)) {
+                if (psd.equals(confirmPsd)) {
                     Intent intent = new Intent(getApplicationContext(), RegisterActivity.class);
                     startActivity(intent);
                     dialog.dismiss();
                 } else {
                     showToast("输入密码错误");
                 }
-            }else{
+            } else {
                 showToast("请输入密码");
             }
         });
@@ -1238,8 +1278,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
             oneVsMoreView.setVisibility(View.GONE);
             alert.setVisibility(View.VISIBLE);
-        }
-        else if (timecompare.TimeCompare(AppData.getAppData().getInstarttime(), AppData.getAppData().getInendtime(), timecompare.getSystemTime())) {
+        } else if (timecompare.TimeCompare(AppData.getAppData().getInstarttime(), AppData.getAppData().getInendtime(), timecompare.getSystemTime())) {
             Log.i("lichao", "正常签到");
             if (AppData.getAppData().getOneFaceBmp() != null && AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE)) {
                 str = "成功";
@@ -1290,7 +1329,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         } else if (timecompare.TimeCompare(AppData.getAppData().getOutendtime(), AppData.getAppData().getOutendtime(), timecompare.getSystemTime())) {
             playMusic(R.raw.sign_out_time_over);
             Log.i("lichao", "签退时间已过");
-        }  else if (timecompare.TimeCompare(AppData.getAppData().getOutstarttime(), AppData.getAppData().getOutendtime(), timecompare.getSystemTime())) {
+        } else if (timecompare.TimeCompare(AppData.getAppData().getOutstarttime(), AppData.getAppData().getOutendtime(), timecompare.getSystemTime())) {
             Log.i("lichao", "正常签退");
             if (AppData.getAppData().getOneFaceBmp() != null && AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE)) {
                 str = "成功";
@@ -1820,11 +1859,11 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         protected TelpoException doInBackground(Void... voids) {
             TelpoException result = null;
             try {
-                if(!isSerialOpen || finishSign) {
-                    IdCard.open(115200,"/dev/ttyS3");
+                if (!isSerialOpen || finishSign) {
+                    IdCard.open(115200, "/dev/ttyS3");
                     isSerialOpen = true;
                 }
-                info =  IdCard.checkIdCard(2000);
+                info = IdCard.checkIdCard(2000);
                 if ("".equals(info.getName())) {
                     return new TelpoException();
                 }
@@ -1843,10 +1882,10 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         protected void onPostExecute(TelpoException result) {
             super.onPostExecute(result);
             if (result == null && cardBitmap != null) {
-                if(finishSign) {
+                if (finishSign) {
                     IdCard.close();
                 }
-                if(!info.getName().contains("timeout") && ReaderCardFlag == true) {
+                if (!info.getName().contains("timeout") && ReaderCardFlag == true) {
                     isOpenOneVsMore = false;
                     ReaderCardFlag = false;
                     Message msg = new Message();
@@ -2086,8 +2125,10 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     }
 
     private String icCard = "";
+
     /**
      * 在java代码中执行adb命令
+     *
      * @param command
      * @return
      */
@@ -2122,9 +2163,9 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
     //判断网线拔插状态
     //通过命令cat /sys/class/net/eth0/carrier，如果插有网线的话，读取到的值是1，否则为0
-    public boolean isWirePluggedIn(){
-        String state= execCommand("cat /sys/class/net/eth0/carrier");
-        if(state.trim().equals("1")){  //有网线插入时返回1，拔出时返回0
+    public boolean isWirePluggedIn() {
+        String state = execCommand("cat /sys/class/net/eth0/carrier");
+        if (state.trim().equals("1")) {  //有网线插入时返回1，拔出时返回0
             return true;
         }
         return false;
@@ -2178,6 +2219,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
     /**
      * 显示获取的网络请求应答数据
+     *
      * @param coursData
      */
     private void showInfo(String coursData) {
@@ -2191,6 +2233,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 cours_Coursename[i] = String.valueOf(coursList.get(i).getCoursename());
             }
 
+            //对话框显示课程内容
             CheckedAdapter checkedAdapterR = new CheckedAdapter(this, cours_Coursename, true);
             new CircleDialog.Builder()
                     .configDialog(params ->
@@ -2204,11 +2247,35 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                         if (!checkedAdapterR.getSaveChecked().toString().equals("{}")) {
                             select_index = checkedAdapterR.getSaveChecked().toString().substring(1, 2);
                             SPUtil.putString(Const.SELECT_COURSE_NAME, coursList.get(Integer.parseInt(select_index)).getClasscode());
+                            Message msg = new Message();
+                            msg.what = Const.SELECTED_COURSE;
+                            mHandler.sendMessage(msg);
                             Toasty.info(mContext, "选课成功", Toast.LENGTH_SHORT, true).show();
                         }
                     })
                     .show(getSupportFragmentManager());
 
+            for (int j = 0; j < coursList.size(); j++) {
+                Log.i(TAG, "Classcode:" + coursList.get(j).getClasscode());
+                //考勤参数保存到本地数据库
+                Cours class_code = coursDao.queryBuilder().where(CoursDao.Properties.Classcode.eq(coursList.get(j).getClasscode())).unique();
+                Cours cours = new Cours();
+                if (class_code == null) {//保存
+                    cours.setCoursename(coursList.get(j).getCoursename());
+                    cours.setSubject(coursList.get(j).getSubject());
+                    cours.setCoursecode(coursList.get(j).getCoursecode());
+                    cours.setClasscode(coursList.get(j).getClasscode());
+                    cours.setTargetlen(coursList.get(j).getTargetlen());
+                    coursDao.insert(cours);
+                } else {//更新
+                    cours.setCoursename(coursList.get(j).getCoursename());
+                    cours.setSubject(coursList.get(j).getSubject());
+                    cours.setCoursecode(coursList.get(j).getCoursecode());
+                    cours.setClasscode(coursList.get(j).getClasscode());
+                    cours.setTargetlen(coursList.get(j).getTargetlen());
+                    coursDao.update(cours);
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -2223,11 +2290,14 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         return super.onKeyDown(keyCode, event);
     }
 
-    /**  返回退出 */
+    /**
+     * 返回退出
+     */
     private int time = 30;
     private DialogFragment dialogFragment;
     private Handler handler;
     private Runnable runnable;
+
     private void showTipExit() {
         time = 30;
         CircleDialog.Builder builder = new CircleDialog.Builder()

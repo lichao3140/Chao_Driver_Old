@@ -27,7 +27,7 @@
             android:textColor="@color/blue"/>
 
         <TextView
-            android:id="@+id/tv_subject"
+            android:id="@+id/info_tv_subject"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="科目一"
@@ -49,7 +49,7 @@
             android:textColor="@color/blue"/>
 
         <TextView
-            android:id="@+id/tv_classcode"
+            android:id="@+id/info_tv_classcode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="91620866542145536"
@@ -71,7 +71,7 @@
             android:textColor="@color/blue"/>
 
         <TextView
-            android:id="@+id/tv_coursename"
+            android:id="@+id/info_tv_coursename"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="法律、法规及道路交通信号|机动车基本知识"
@@ -93,7 +93,7 @@
             android:textColor="@color/blue"/>
 
         <TextView
-            android:id="@+id/tv_coursecode"
+            android:id="@+id/info_tv_coursecode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="01,02"
@@ -115,7 +115,7 @@
             android:textColor="@color/blue"/>
 
         <TextView
-            android:id="@+id/tv_targetlen"
+            android:id="@+id/info_tv_targetlen"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="45"
