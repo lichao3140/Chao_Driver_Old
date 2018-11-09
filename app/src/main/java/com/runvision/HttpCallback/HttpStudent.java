@@ -8,6 +8,7 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 import com.runvision.bean.AppData;
 import com.runvision.bean.IDCard;
+import com.runvision.bean.IDCardDao;
 import com.runvision.bean.LogOutResponse;
 import com.runvision.bean.LoginResponse;
 import com.runvision.bean.Stulogin;
@@ -160,12 +161,22 @@ public class HttpStudent {
                                             Log.e("lichao", "完成科目:" + cdb.getSubject());
                                             Log.e("lichao", "完成学时:" + cdb.getCompleteHour());
                                         }
-                                        Toasty.success(context, context.getString(R.string.toast_update_success), Toast.LENGTH_SHORT, true).show();
+
+                                        //查询出SN
+                                        IDCard delete_sn =  MainActivity.idCardDao.queryBuilder().where(IDCardDao.Properties.Id_card.eq(stucode)).unique();
+                                        if (delete_sn != null) {
+                                            MainActivity.idCardDao.deleteByKey(delete_sn.getId());
+                                            playMusic(context, R.raw.sign_out_success);
+                                            Toasty.success(context, context.getString(R.string.toast_update_success), Toast.LENGTH_SHORT, true).show();
+                                        } else {
+                                            playMusic(context, R.raw.replay_sign_out);
+                                            Toasty.error(context, context.getString(R.string.toast_update_fail) + "重复签退或无签到记录", Toast.LENGTH_LONG, true).show();
+                                        }
                                     } else {
                                         Toasty.error(context, context.getString(R.string.toast_update_fail) + gsonLogOut.getMessage(), Toast.LENGTH_LONG, true).show();
                                     }
                                 } else {
-                                    Toasty.error(context, context.getString(R.string.toast_update_fail), Toast.LENGTH_LONG, true).show();
+                                    Toasty.error(context, context.getString(R.string.toast_update_fail) + gsonLogOut.getMessage(), Toast.LENGTH_LONG, true).show();
                                 }
                             } else {
                                 Toasty.error(context, context.getString(R.string.toast_server_error), Toast.LENGTH_LONG, true).show();

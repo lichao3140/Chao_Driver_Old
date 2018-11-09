@@ -437,6 +437,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     }
                     break;
                 case Const.MSG_READ_CARD:
+                    Log.i(TAG, "=================chuankou");
                     mHandler.removeMessages(Const.MSG_READ_CARD);
                     mAsyncTask = new GetIDInfoTask();
                     mAsyncTask.execute();
@@ -700,6 +701,9 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             faceDetectTask.cancel(false);
             faceDetectTask = null;
         }
+        if (mAsyncTask != null) {
+            mAsyncTask = null;
+        }
         //关闭未播报完语音
         if (mPlayer != null) {
             if (mPlayer.isPlaying()) {
@@ -721,6 +725,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     @Override
     protected void onRestart() {
         if (admin_is_login) {
+            mHandler.sendMessageDelayed(mHandler.obtainMessage(Const.MSG_READ_CARD, ""), 2000);
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);//打开手势滑动
         } else {
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);//关闭手势滑动
@@ -1329,8 +1334,16 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         } else if (timecompare.TimeCompare(AppData.getAppData().getOutstarttime(), AppData.getAppData().getOutendtime(), timecompare.getSystemTime())) {
             Log.i("lichao", "正常签退");
             if (AppData.getAppData().getOneFaceBmp() != null && AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE)) {
+                //查询出SN
+                IDCard delete_sn =  MainActivity.idCardDao.queryBuilder().where(IDCardDao.Properties.Id_card.eq(AppData.getAppData().getCardNo())).unique();
+                if (delete_sn == null) {
+                    playMusic(R.raw.replay_sign_out);
+                    Toasty.error(mContext, "重复签退或无签到记录", Toast.LENGTH_LONG, true).show();
+                    return;
+                }
+                stu_sn = delete_sn.getSn();
+
                 str = "成功";
-                playMusic(R.raw.sign_out_success);
                 isSuccessComper.setImageResource(R.mipmap.icon_tg);
                 faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
 
@@ -1350,16 +1363,9 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 user.setRecord(record);
                 MyApplication.faceProvider.addRecord(user);
 
-
-//                HttpStudent.Stulogout(mContext, devnum, TimeUtils.getCurrentTime(), AppData.getAppData().getCardNo(), "1", gps,
-//                        CameraHelp.bitmapToBase64(CameraHelp.getSmallBitmap(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg")),
-//                        classcode, stu_sn, 0, AppData.getAppData().getName());
-//
-//                //查询出SN
-//                IDCard delete_sn = idCardDao.queryBuilder().where(IDCardDao.Properties.Id_card.eq(AppData.getAppData().getCardNo())).unique();
-//                if (delete_sn != null) {
-//                    idCardDao.deleteByKey(delete_sn.getId());
-//                }
+                HttpStudent.Stulogout(mContext, devnum, TimeUtils.getCurrentTime(), AppData.getAppData().getCardNo(), "1", gps,
+                        CameraHelp.bitmapToBase64(CameraHelp.getSmallBitmap(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg")),
+                        classcode, stu_sn, 0, AppData.getAppData().getName());
 
                 oneVsMoreView.setVisibility(View.GONE);
                 alert.setVisibility(View.VISIBLE);
