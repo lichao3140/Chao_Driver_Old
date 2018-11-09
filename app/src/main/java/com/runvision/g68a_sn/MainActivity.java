@@ -1334,7 +1334,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         } else if (timecompare.TimeCompare(AppData.getAppData().getOutstarttime(), AppData.getAppData().getOutendtime(), timecompare.getSystemTime())) {
             Log.i("lichao", "正常签退");
             if (AppData.getAppData().getOneFaceBmp() != null && AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE)) {
-                //查询出SN
+                //重复签退-查询出SN
                 IDCard delete_sn =  MainActivity.idCardDao.queryBuilder().where(IDCardDao.Properties.Id_card.eq(AppData.getAppData().getCardNo())).unique();
                 if (delete_sn == null) {
                     playMusic(R.raw.replay_sign_out);
