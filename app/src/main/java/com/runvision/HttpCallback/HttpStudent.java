@@ -70,6 +70,7 @@ public class HttpStudent {
                     .execute(new StringCallback() {
                         @Override
                         public void onError(Call call, Exception e, int id) {
+                            playMusic(context, R.raw.sign_fail);
                             Toasty.error(context, context.getString(R.string.toast_request_error), Toast.LENGTH_LONG, true).show();
                         }
 
@@ -93,15 +94,15 @@ public class HttpStudent {
                                         playMusic(context, R.raw.sign_success);
                                         Toasty.success(context, context.getString(R.string.toast_update_success), Toast.LENGTH_SHORT, true).show();
                                     } else {
-                                        playMusic(context, R.raw.error);
+                                        playMusic(context, R.raw.sign_fail);
                                         Toasty.warning(context, context.getString(R.string.toast_update_fail) + gsonLogin.getMessage(), Toast.LENGTH_LONG, true).show();
                                     }
                                 } else {
-                                    playMusic(context, R.raw.error);
+                                    playMusic(context, R.raw.sign_fail);
                                     Toasty.error(context, context.getString(R.string.toast_update_fail) + gsonLogin.getMessage(), Toast.LENGTH_LONG, true).show();
                                 }
                             } else {
-                                playMusic(context, R.raw.error);
+                                playMusic(context, R.raw.sign_fail);
                                 Toasty.error(context, context.getString(R.string.toast_server_error), Toast.LENGTH_LONG, true).show();
                             }
                         }

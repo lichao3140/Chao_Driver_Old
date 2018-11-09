@@ -1281,6 +1281,13 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         } else if (timecompare.TimeCompare(AppData.getAppData().getInstarttime(), AppData.getAppData().getInendtime(), timecompare.getSystemTime())) {
             Log.i("lichao", "正常签到");
             if (AppData.getAppData().getOneFaceBmp() != null && AppData.getAppData().getoneCompareScore() >= SPUtil.getFloat(Const.KEY_CARDSCORE, Const.ONEVSONE_SCORE)) {
+                //重复签到
+                IDCard delete_sn = idCardDao.queryBuilder().where(IDCardDao.Properties.Id_card.eq(AppData.getAppData().getCardNo())).unique();
+                if (delete_sn != null) {
+                    playMusic(R.raw.replay_sign_in);
+                    return;
+                }
+
                 str = "成功";
                 isSuccessComper.setImageResource(R.mipmap.icon_tg);
                 faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
@@ -1309,16 +1316,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 HttpStudent.Stulogin(mContext, devnum, TimeUtils.getCurrentTime(), AppData.getAppData().getCardNo(), "1", gps,
                         CameraHelp.bitmapToBase64(CameraHelp.getSmallBitmap(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg")),
                         classcode, stu_sn, AppData.getAppData().getName(), AppData.getAppData().getSex(), snapPath, cardPath);
-
-//                IDCard idCard = new IDCard();
-//                idCard.setName(AppData.getAppData().getName());
-//                idCard.setGender(AppData.getAppData().getSex());
-//                idCard.setId_card(AppData.getAppData().getCardNo());
-//                idCard.setFacepic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg");
-//                idCard.setIdcardpic(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID + ".jpg");
-//                idCard.setSign_in(String.valueOf(timecompare.getSystemTime()));
-//                idCard.setSn(UUIDUtil.getUniqueID(mContext) + TimeUtils.getTime13());
-//                idCardDao.insert(idCard);
 
                 oneVsMoreView.setVisibility(View.GONE);
                 alert.setVisibility(View.VISIBLE);
