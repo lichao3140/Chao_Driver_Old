@@ -1290,40 +1290,40 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 IDCard delete_sn = idCardDao.queryBuilder().where(IDCardDao.Properties.Id_card.eq(AppData.getAppData().getCardNo())).unique();
                 if (delete_sn != null) {
                     playMusic(R.raw.replay_sign_in);
-                    return;
+                    Toasty.info(mContext, "重复签到", Toast.LENGTH_LONG, true).show();
+                } else {
+                    str = "成功";
+                    isSuccessComper.setImageResource(R.mipmap.icon_tg);
+                    faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
+
+                    //保存抓拍图片
+                    String snapImageID = IDUtils.genImageName();
+                    if (AppData.getAppData().getOneFaceBmp() != null) {
+                        FileUtils.saveFile(AppData.getAppData().getOneFaceBmp(), snapImageID, TestDate.DGetSysTime() + "_Face");
+                    }
+                    //保存身份证图片
+                    String cardImageID = snapImageID + "_card";
+                    if (AppData.getAppData().getCardBmp() != null) {
+                        FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
+                    }
+
+                    String snapPath = Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg";
+                    String cardPath = Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID + ".jpg";
+
+                    //插入数据库
+                    Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
+                    User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
+                    user.setRecord(record);
+                    MyApplication.faceProvider.addRecord(user);
+
+                    //签到接口
+                    HttpStudent.Stulogin(mContext, devnum, TimeUtils.getCurrentTime(), AppData.getAppData().getCardNo(), "1", gps,
+                            CameraHelp.bitmapToBase64(CameraHelp.getSmallBitmap(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg")),
+                            classcode, stu_sn, AppData.getAppData().getName(), AppData.getAppData().getSex(), snapPath, cardPath);
+
+                    oneVsMoreView.setVisibility(View.GONE);
+                    alert.setVisibility(View.VISIBLE);
                 }
-
-                str = "成功";
-                isSuccessComper.setImageResource(R.mipmap.icon_tg);
-                faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
-
-                //保存抓拍图片
-                String snapImageID = IDUtils.genImageName();
-                if (AppData.getAppData().getOneFaceBmp() != null) {
-                    FileUtils.saveFile(AppData.getAppData().getOneFaceBmp(), snapImageID, TestDate.DGetSysTime() + "_Face");
-                }
-                //保存身份证图片
-                String cardImageID = snapImageID + "_card";
-                if (AppData.getAppData().getCardBmp() != null) {
-                    FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
-                }
-
-                String snapPath = Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg";
-                String cardPath = Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID + ".jpg";
-
-                //插入数据库
-                Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
-                User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
-                user.setRecord(record);
-                MyApplication.faceProvider.addRecord(user);
-
-                //签到接口
-                HttpStudent.Stulogin(mContext, devnum, TimeUtils.getCurrentTime(), AppData.getAppData().getCardNo(), "1", gps,
-                        CameraHelp.bitmapToBase64(CameraHelp.getSmallBitmap(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg")),
-                        classcode, stu_sn, AppData.getAppData().getName(), AppData.getAppData().getSex(), snapPath, cardPath);
-
-                oneVsMoreView.setVisibility(View.GONE);
-                alert.setVisibility(View.VISIBLE);
             }
         } else if (timecompare.TimeCompare(AppData.getAppData().getInendtime(), AppData.getAppData().getOutstarttime(), timecompare.getSystemTime())) {
             playMusic(R.raw.sign_time_over);
@@ -1338,37 +1338,36 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 IDCard delete_sn =  MainActivity.idCardDao.queryBuilder().where(IDCardDao.Properties.Id_card.eq(AppData.getAppData().getCardNo())).unique();
                 if (delete_sn == null) {
                     playMusic(R.raw.replay_sign_out);
-                    Toasty.error(mContext, "重复签退或无签到记录", Toast.LENGTH_LONG, true).show();
-                    return;
+                    Toasty.info(mContext, "重复签退或无签到记录", Toast.LENGTH_LONG, true).show();
+                } else {
+                    stu_sn = delete_sn.getSn();
+                    str = "成功";
+                    isSuccessComper.setImageResource(R.mipmap.icon_tg);
+                    faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
+
+                    //保存抓拍图片
+                    String snapImageID = IDUtils.genImageName();
+                    if (AppData.getAppData().getOneFaceBmp() != null) {
+                        FileUtils.saveFile(AppData.getAppData().getOneFaceBmp(), snapImageID, TestDate.DGetSysTime() + "_Face");
+                    }
+                    //保存身份证图片
+                    String cardImageID = snapImageID + "_card";
+                    if (AppData.getAppData().getCardBmp() != null) {
+                        FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
+                    }
+                    //插入数据库
+                    Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
+                    User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
+                    user.setRecord(record);
+                    MyApplication.faceProvider.addRecord(user);
+
+                    HttpStudent.Stulogout(mContext, devnum, TimeUtils.getCurrentTime(), AppData.getAppData().getCardNo(), "1", gps,
+                            CameraHelp.bitmapToBase64(CameraHelp.getSmallBitmap(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg")),
+                            classcode, stu_sn, 0, AppData.getAppData().getName());
+
+                    oneVsMoreView.setVisibility(View.GONE);
+                    alert.setVisibility(View.VISIBLE);
                 }
-                stu_sn = delete_sn.getSn();
-
-                str = "成功";
-                isSuccessComper.setImageResource(R.mipmap.icon_tg);
-                faceBmp_view.setImageBitmap(AppData.getAppData().getOneFaceBmp());
-
-                //保存抓拍图片
-                String snapImageID = IDUtils.genImageName();
-                if (AppData.getAppData().getOneFaceBmp() != null) {
-                    FileUtils.saveFile(AppData.getAppData().getOneFaceBmp(), snapImageID, TestDate.DGetSysTime() + "_Face");
-                }
-                //保存身份证图片
-                String cardImageID = snapImageID + "_card";
-                if (AppData.getAppData().getCardBmp() != null) {
-                    FileUtils.saveFile(AppData.getAppData().getCardBmp(), cardImageID, TestDate.DGetSysTime() + "_Card");
-                }
-                //插入数据库
-                Record record = new Record(AppData.getAppData().getoneCompareScore() + "", str, Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID, "人证");
-                User user = new User(AppData.getAppData().getName(), "无", AppData.getAppData().getSex(), 0, "无", AppData.getAppData().getCardNo(), Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Card" + "/" + cardImageID, DateTimeUtils.getTime());
-                user.setRecord(record);
-                MyApplication.faceProvider.addRecord(user);
-
-                HttpStudent.Stulogout(mContext, devnum, TimeUtils.getCurrentTime(), AppData.getAppData().getCardNo(), "1", gps,
-                        CameraHelp.bitmapToBase64(CameraHelp.getSmallBitmap(Environment.getExternalStorageDirectory() + "/FaceAndroid/" + TestDate.DGetSysTime() + "_Face" + "/" + snapImageID + ".jpg")),
-                        classcode, stu_sn, 0, AppData.getAppData().getName());
-
-                oneVsMoreView.setVisibility(View.GONE);
-                alert.setVisibility(View.VISIBLE);
             }
         } else {
             playMusic(R.raw.no_cours_time);
