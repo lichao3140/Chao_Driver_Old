@@ -437,10 +437,8 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     }
                     break;
                 case Const.MSG_READ_CARD:
-                    Log.i(TAG, "=================chuankou");
                     mHandler.removeMessages(Const.MSG_READ_CARD);
-                    mAsyncTask = new GetIDInfoTask();
-                    mAsyncTask.execute();
+                    startIdCardThread();
                     break;
                 case Const.READ_CARD_INFO:
                     mHandler.removeMessages(Const.COMPER_FINIASH);
@@ -702,6 +700,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             faceDetectTask = null;
         }
         if (mAsyncTask != null) {
+            mAsyncTask.setTaskIsRuning(false);
             mAsyncTask = null;
         }
         //关闭未播报完语音
@@ -844,13 +843,13 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 infoTvCoursename.setText(sign_class.getCoursename());
                 infoTvCoursecode.setText(sign_class.getCoursecode());
                 infoTvTargetlen.setText(sign_class.getTargetlen());
-            } else {
-                infoTvSubject.setText("管理员请选择考勤参数");
-                infoTvClasscode.setText("管理员请选择考勤参数");
-                infoTvCoursename.setText("管理员请选择考勤参数");
-                infoTvCoursecode.setText("管理员请选择考勤参数");
-                infoTvTargetlen.setText("管理员请选择考勤参数");
             }
+        } else {
+            infoTvSubject.setText("管理员请选择考勤参数");
+            infoTvClasscode.setText("管理员请选择考勤参数");
+            infoTvCoursename.setText("管理员请选择考勤参数");
+            infoTvCoursecode.setText("管理员请选择考勤参数");
+            infoTvTargetlen.setText("管理员请选择考勤参数");
         }
     }
 
@@ -865,10 +864,19 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         faceDetectTask = new FaceFramTask(mHandler, mCameraSurfView);
         faceDetectTask.setRuning(true);
         faceDetectTask.execute();
+    }
 
+    /**
+     * 开启身份证读取线程
+     */
+    private void startIdCardThread() {
         if (mAsyncTask != null) {
-
+            mAsyncTask.setTaskIsRuning(false);
+            mAsyncTask = null;
         }
+        mAsyncTask = new GetIDInfoTask();
+        mAsyncTask.setTaskIsRuning(true);
+        mAsyncTask.execute();
     }
 
     /**
@@ -1093,11 +1101,11 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 }
             }).start();
         } catch (IDCardReaderException e) {
-            Log.i(TAG, "连接设备失败");
-            Log.i(TAG, "开始读卡失败，错误码：" + e.getErrorCode() + "\n错误信息："
+            Log.i(TAG, "USB读卡器连接设备失败");
+            Log.i(TAG, "连接USB读卡器失败，错误码：" + e.getErrorCode() + "\n错误信息："
                     + e.getMessage() + "\n内部代码="
                     + e.getInternalErrorCode());
-            showToast("连接读卡器失败:" + e.getMessage());
+//            showToast("连接USB读卡器失败:" + e.getMessage());
         }
     }
 
@@ -1581,17 +1589,15 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     if (score == null) {
                         score = new AFR_FSDKMatching();
                     }
-                    Log.i("GavinTest", "for前" + System.currentTimeMillis());
                     if (MyApplication.mList.size() > 0) {
                         for (Map.Entry<String, byte[]> entry : MyApplication.mList.entrySet()) {
                             if ((isOpenOneVsMore == false) || (Const.BATCH_IMPORT_TEMPLATE == true) || (Const.DELETETEMPLATE == true)) {
-                                //  AppData.getAppData().setCompareScore(0);
                                 continue;
                             }
                             String fileName = (String) entry.getKey();
                             byte[] mTemplate = (byte[]) entry.getValue();
                             AFR_FSDKFace face3 = new AFR_FSDKFace(mTemplate);
-                            ret = MyApplication.mFaceLibCore.FacePairMatching(face3, face, score);
+                            MyApplication.mFaceLibCore.FacePairMatching(face3, face, score);
                             if (score.getScore() >= fenshu) {
                                 if (user == null) {
                                     user = new User();
@@ -1608,7 +1614,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                                 continue;
                             }
                         }
-                        // AppData.getAppData().setCompareScore(fenshu);
                         AppData.getAppData().setCompareScore(fenshu);
                     }
                 } else {
@@ -1640,7 +1645,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 }
             }
         }
-
     }
 
     /**
@@ -1849,6 +1853,11 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     private boolean finishSign = false;
 
     private class GetIDInfoTask extends AsyncTask<Void, Integer, TelpoException> {
+        public boolean taskIsRuning = true;
+
+        public void setTaskIsRuning(boolean taskIsRuning) {
+            this.taskIsRuning = taskIsRuning;
+        }
 
         @Override
         protected void onPreExecute() {
@@ -1859,25 +1868,28 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
         @Override
         protected TelpoException doInBackground(Void... voids) {
-            TelpoException result = null;
-            try {
-                if (!isSerialOpen || finishSign) {
-                    IdCard.open(115200, "/dev/ttyS3");
-                    isSerialOpen = true;
-                }
-                info = IdCard.checkIdCard(2000);
-                if ("".equals(info.getName())) {
-                    return new TelpoException();
-                }
-                image = IdCard.getIdCardImage();
-                cardBitmap = IdCard.decodeIdCardImage(image);
-            } catch (TelpoException e) {
-                e.printStackTrace();
-                result = e;
-            } finally {
+            while (taskIsRuning) {
+                TelpoException result = null;
+                try {
+                    if (!isSerialOpen || finishSign) {
+                        IdCard.open(115200, "/dev/ttyS3");
+                        isSerialOpen = true;
+                    }
+                    info = IdCard.checkIdCard(2000);
+                    if ("".equals(info.getName())) {
+                        return new TelpoException();
+                    }
+                    image = IdCard.getIdCardImage();
+                    cardBitmap = IdCard.decodeIdCardImage(image);
+                } catch (TelpoException e) {
+                    e.printStackTrace();
+                    result = e;
+                } finally {
 
+                }
+                return result;
             }
-            return result;
+            return null;
         }
 
         @Override
