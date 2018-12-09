@@ -20,6 +20,7 @@ import com.runvision.db.Admin;
 import com.runvision.db.FaceProvider;
 import com.runvision.gpio.GPIOHelper;
 import com.runvision.utils.CameraHelp;
+import com.runvision.utils.FileUtils;
 import com.runvision.utils.LogToFile;
 
 import java.io.File;
@@ -71,6 +72,15 @@ public class MyApplication extends Application {
 //            LogToFile.e(TAG,"该设备没有序列号");
 //            finishActivity();
 //        }
+        File[] fs = context.getFilesDir().listFiles();
+        String ff = null;
+        for (File f : fs){
+            System.out.println(f);
+            ff = f.toString();
+        }
+        FileUtils.copyFile(ff,Environment.getExternalStorageDirectory() + "/FaceAndroid/.asf_install.dat");
+        FileUtils.copyFile(Environment.getExternalStorageDirectory() + "/FaceAndroid/.asf_install.dat", getFilesDir().getAbsolutePath() + File.separator + ".asf_install.dat");
+
 
         int ret = mFaceLibCore.initLib(context);
         if (ret == 0) {
@@ -117,14 +127,6 @@ public class MyApplication extends Application {
         }
         return serial;
     }
-
-   // private void initLeakCanary() {
-
-    //    if (LeakCanary.isInAnalyzerProcess(this)) {
-    //        return;
-   //     }
-   //     LeakCanary.install(this);
-   // }
 
     public void init() {
         // 设置该CrashHandler为程序的默认处理器

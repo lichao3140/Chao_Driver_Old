@@ -317,10 +317,136 @@ public class SendData {
         System.arraycopy(temp, 0, resultData, 19 + data.length, temp.length);
 
         temp = ConversionHelp.charToByte((char) 0x7F);
+        System.arraycopy(temp, 0, resultData, resultData.length - 1, temp.length);
+
+        return resultData;
+    }
+
+
+    /**
+     *  UDP返回设备信息
+     */
+    public static byte[]  UDPDeviceMsg() throws UnsupportedEncodingException {
+        byte[] loginData = new byte[4+64+32+4+64+16+16+16+16+24+2];
+        byte[] temp = null;
+
+        temp= SPUtil.getString("type","").getBytes();//设备类型
+        System.arraycopy(temp, 0, loginData, 0, temp.length);
+        temp= SPUtil.getString(Const.KEY_VMSUSERNAME,"").getBytes();//设备编号
+        System.arraycopy(temp, 0, loginData, 4, temp.length);
+        String strGBK=SPUtil.getString("name","");
+        temp = strGBK.getBytes("GBK");
+        System.arraycopy(temp, 0, loginData, 68, temp.length);
+        temp = String.valueOf(1).getBytes();
+        System.arraycopy(temp, 0, loginData, 100, temp.length);
+        temp = CameraHelp.getIpAddress().getBytes();//设备IP地址
+        System.arraycopy(temp, 0, loginData, 104, temp.length);
+        temp = "255.255.255.0".getBytes();//子网掩码
+        System.arraycopy(temp, 0, loginData, 168, temp.length);
+        temp = "192.168.1.1".getBytes();
+        System.arraycopy(temp, 0, loginData, 184, temp.length);
+        temp = "192.168.1.1".getBytes();
+        System.arraycopy(temp, 0, loginData, 200, temp.length);
+        temp = "192.168.1.1".getBytes();//DNS2
+        System.arraycopy(temp, 0, loginData, 216, temp.length);
+        temp = CameraHelp.getMac().getBytes();//MAC
+        System.arraycopy(temp, 0, loginData, 232, temp.length);
+        temp = String.valueOf(0).getBytes();
+        System.arraycopy(temp, 0, loginData, 256, temp.length);
+        //socketThread.mSend(getReturnData(loginData));
+        return getReturnData(loginData);
+
+    }
+
+    /**
+     * UDP返回有参数的请求
+     *
+     * @param data
+     * @return
+     */
+    public static byte[] getReturnData(byte[] data) {
+        char a = 0x7E;
+        byte[] b = new byte[19];
+        byte[] temp = null;
+        temp = ConversionHelp.charToByte(a);
+        System.arraycopy(temp, 0, b, 0, temp.length);
+        temp = ConversionHelp.intToByte(ConversionHelp.SeqNumber());
+        System.arraycopy(temp, 0, b, 1, temp.length);
+        temp = ConversionHelp.shortToByte((short) 0x0000);
+        System.arraycopy(temp, 0, b, 5, temp.length);
+        temp = ConversionHelp.shortToByte((short) 0x0001);
+        System.arraycopy(temp, 0, b, 7, temp.length);
+
+        temp = ConversionHelp.intToByte(0x00000000);
+        System.arraycopy(temp, 0, b, 9, temp.length);
+
+        // temp = ConversionHelp.intToByte(msgType);
+        // System.arraycopy(temp, 0, b, 9, temp.length);
+
+        temp = ConversionHelp.shortToByte((short) 0x0002);
+        System.arraycopy(temp, 0, b, 13, temp.length);
+        temp = ConversionHelp.intToByte(data.length);
+        System.arraycopy(temp, 0, b, 15, temp.length);
+
+        byte[] resultData = null;
+
+        resultData = new byte[b.length + data.length + 3];
+        System.arraycopy(b, 0, resultData, 0, b.length);
+
+        System.arraycopy(data, 0, resultData, 19, data.length);
+
+
+        temp = ConversionHelp.shortToByte((short) ConversionHelp.getCheck(resultData, resultData.length - 3));
+
+        System.arraycopy(temp, 0, resultData, 19 + data.length, temp.length);
+
+        temp = ConversionHelp.charToByte((char) 0x7F);
         System.arraycopy(temp, 0, resultData, resultData.length - 1,
                 temp.length);
 
         return resultData;
+
+    }
+
+    /**
+     *  UDP返回设备信息
+     */
+    public static void VMSErrorMsg(SocketThread socketThread) throws UnsupportedEncodingException {
+        byte[] ErrorMsg = new byte[4+64+32+32+64+128+128+4+128];
+        byte[] temp = null;
+
+        temp = ConversionHelp.intToByte(SPUtil.getInt("UUID", 0));
+        System.arraycopy(temp, 0, ErrorMsg, 0, temp.length);
+        temp = SPUtil.getString(Const.KEY_VMSUSERNAME, getSerialNumber()).getBytes();
+        System.arraycopy(temp, 0, ErrorMsg, 4, temp.length);
+        try {
+            temp = SPUtil.getString("name", "").getBytes("GBK");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        System.arraycopy(temp, 0, ErrorMsg, 68, temp.length);
+
+        temp=AppData.getAppData().getErrormsgidnum().getBytes("GBK");
+        System.arraycopy(temp, 0, ErrorMsg, 100, temp.length);
+
+        temp=AppData.getAppData().getErrormsgname().getBytes("GBK");
+        System.arraycopy(temp, 0, ErrorMsg, 132, temp.length);
+
+        temp=AppData.getAppData().getErrormsgpicname().getBytes("GBK");
+        System.arraycopy(temp, 0, ErrorMsg, 196, temp.length);
+
+        temp=AppData.getAppData().getErroemsg().getBytes("GBK");
+        System.arraycopy(temp, 0, ErrorMsg, 324, temp.length);
+
+        temp=ConversionHelp.getTimeByte();
+        System.arraycopy(temp, 0, ErrorMsg, 452, temp.length);
+
+        temp="".getBytes();
+        System.arraycopy(temp, 0, ErrorMsg, 456, temp.length);
+
+
+        socketThread.mSend(getSendData(Const.NMSG_ERROR_MSG, ErrorMsg));
+        AppData.getAppData().clean();
 
     }
 

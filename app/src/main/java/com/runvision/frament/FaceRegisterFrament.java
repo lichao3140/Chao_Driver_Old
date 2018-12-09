@@ -19,9 +19,8 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.arcsoft.facedetection.AFD_FSDKFace;
-import com.arcsoft.facerecognition.AFR_FSDKFace;
+import com.arcsoft.face.FaceFeature;
+import com.arcsoft.face.FaceInfo;
 import com.runvision.bean.AppData;
 import com.runvision.core.Const;
 import com.runvision.db.User;
@@ -33,7 +32,6 @@ import com.runvision.utils.CameraHelp;
 import com.runvision.utils.DateTimeUtils;
 import com.runvision.utils.FileUtils;
 import com.runvision.utils.IDUtils;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -228,7 +226,7 @@ public class FaceRegisterFrament extends Fragment implements View.OnClickListene
         }).start();
     }
 
-   private void addFace() {
+    private void addFace() {
         if (reg_bmp == null) {
             Toast.makeText(mContext, "图片不能为空", Toast.LENGTH_SHORT).show();
             return;
@@ -284,30 +282,27 @@ public class FaceRegisterFrament extends Fragment implements View.OnClickListene
             Toast.makeText(mContext, "添加失败", Toast.LENGTH_SHORT).show();
 
         }
-
     }
 
-
-    public boolean mSaveTemplate(Bitmap bitmap,String mfilename) {
+    public boolean mSaveTemplate(Bitmap bitmap, String mfilename) {
         boolean generateTemplate=false;
         String path = Environment.getExternalStorageDirectory() + "/FaceAndroid/Template/";
         String ImagePath = Environment.getExternalStorageDirectory() + "/FaceAndroid/Face/";
-        int w = bitmap.getWidth() % 2 == 0 ? bitmap.getWidth() : bitmap.getWidth() - 1;
-        int h = bitmap.getHeight() % 2 == 0 ? bitmap.getHeight() : bitmap.getHeight() - 1;
+        bitmap =CameraHelp.alignBitmapForNv21(bitmap);//裁剪
+        int w = bitmap.getWidth();
+        int h = bitmap.getHeight();
+        byte[] nv21 = CameraHelp.bitmapToNv21(bitmap,w, h);//转nv21
 
-        byte[] nv21 = CameraHelp.getNV21(w, h, bitmap);
-
-        List<AFD_FSDKFace> result = new ArrayList<AFD_FSDKFace>();
+        List<FaceInfo> result = new ArrayList<FaceInfo>();
         MyApplication.mFaceLibCore.FaceDetection(nv21, w, h, result);
-        if (result.size() != 0) {
-            AFR_FSDKFace face = new AFR_FSDKFace();
-            int ret = MyApplication.mFaceLibCore.FaceFeature(nv21, w, h, result.get(0).getRect(), result.get(0).getDegree(), face);
+        if ((MyApplication.mFaceLibCore.FaceDetection(nv21, w, h, result) == 0)&&(result.size() > 0)) {
+            FaceFeature faceFeature = new FaceFeature();
+            int ret = MyApplication.mFaceLibCore.FaceFeatureExtract(nv21, w, h,result.get(0), faceFeature);
             if (ret == 0) {
-                CameraHelp.saveFile(path, mfilename+".data", face.getFeatureData());
+                CameraHelp.saveFile(path, mfilename+".data", faceFeature.getFeatureData());
                 CameraHelp.saveImgToDisk(ImagePath, mfilename+".jpg", bitmap);
                 FileUtils.saveFile(bitmap, mfilename, "FaceTemplate");
-               // Template t = new Template(mfilename, face);
-                MyApplication.mList.put(mfilename,face.getFeatureData());
+                MyApplication.mList.put(mfilename,faceFeature.getFeatureData());
                 generateTemplate=true;
                 System.out.println("存入模板库");
             } else {

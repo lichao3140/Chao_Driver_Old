@@ -1,15 +1,18 @@
 package com.runvision.utils;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
+import android.net.Uri;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Log;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -19,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -29,7 +33,6 @@ import java.util.Enumeration;
  */
 
 public class CameraHelp {
-
 
     public static void rotateYUV240SP_Clockwise(byte[] src, byte[] des, int width, int height) {
         int wh = width * height;
@@ -194,10 +197,11 @@ public class CameraHelp {
 
 
     //只能用于横屏的抠脸
-    public static Bitmap getFaceImgByInfraredJpg(int left, int top, int right, int bottom, Bitmap bmp) {
+    public static Bitmap getXFaceImgByInfraredJpg(int left, int top, int right, int bottom, Bitmap bmp) {
         //获取图片的高宽
         int width = bmp.getWidth();
         int height = bmp.getHeight();
+
         //正常坐标
         if (top != bottom && left != right) {
             //  获取人脸框的宽度  然后方法2倍
@@ -250,6 +254,63 @@ public class CameraHelp {
         return null;
     }
 
+    //只能用于竖屏的抠脸
+    public static Bitmap getYFaceImgByInfraredJpg(int left, int top, int right, int bottom, Bitmap bmp) {
+        //获取图片的高宽
+        int width = bmp.getWidth();
+        int height = bmp.getHeight();
+
+        //正常坐标
+        if (top != bottom && left != right) {
+            //  获取人脸框的宽度  然后方法2倍
+            int iFaceWidth = (int) ((right - left) * 1.5);
+
+            //如果放大后 发现大于图片的宽度  就改成图片的宽度-10
+            if (iFaceWidth >= width) {
+                iFaceWidth = width - 10;
+            }
+
+            //高度放大3倍
+            int iFaceHeight = (int) ((bottom - top) * 1.5);
+            if (iFaceHeight >= height) {
+                iFaceHeight = height - 10;
+            }
+
+
+            int iLeft = left + (right - left) / 2 - iFaceWidth / 2;
+            iLeft = iLeft > 0 ? iLeft : 0;
+
+            int iTop = top + (bottom - top) / 2 - iFaceHeight / 2;
+            iTop = iTop > 0 ? iTop : 0;
+
+            if (iLeft < width && iTop < height) {
+                int iWidth = 0;
+                int iHeight = 0;
+                if (width < (iLeft + iFaceWidth)) {
+                    iWidth = width - iLeft - 10;
+                } else {
+                    iWidth = iFaceWidth;
+                }
+
+                if (height < (iTop + iFaceHeight)) {
+                    iHeight = height - iTop - 10;
+                } else {
+                    iHeight = iFaceHeight;
+                }
+
+                int oldW = iWidth;
+                iWidth = (int) ((81.0f / 111.0f) * (float) iHeight);
+                iLeft = iLeft + ((oldW / 2) - iWidth / 2);
+                iLeft = iLeft > 0 ? iLeft : 0;
+
+                if (iLeft + iWidth >= bmp.getWidth()) {
+                    iWidth = bmp.getWidth() - iLeft - 5;
+                }
+                return Bitmap.createBitmap(bmp, iLeft, iTop, iWidth, iHeight);
+            }
+        }
+        return null;
+    }
 
     /*public static Bitmap getFaceImgByInfraredJpg(int left, int top, int right, int bottom, Bitmap bmp) {
         int width = bmp.getWidth()-50;
@@ -470,7 +531,7 @@ public class CameraHelp {
 
         try {
             FileOutputStream out = new FileOutputStream(srcFile);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 10, out);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
             out.flush();
             out.close();
         } catch (FileNotFoundException e) {
@@ -732,6 +793,234 @@ public class CameraHelp {
             return null;
         } catch (SocketException ex) {
             ex.printStackTrace();
+            return null;
+        }
+    }
+
+      /*  public static void ssss(Context context) {
+            EthernetManager mEthManager = context.getSystemService("ethernet");
+
+            EthernetDevInfo mEthInfo = mEthManager.getSavedEthConfig();
+
+            Log.i(TAG, "mEthInfo == null :  " + (mEthInfo == null));
+
+            if (mEthInfo != null) {
+
+                String ipAddress = mEthInfo.getIpAddress();
+
+                String netMask = mEthInfo.getNetMask();
+
+                String dns = mEthInfo.getDnsAddr();
+
+                String gateWay = mEthInfo.getRouteAddr();
+            }
+        }*/
+
+
+    private String getMacAddress(){
+        String strMacAddr = null;
+        try {
+            InetAddress ip = getLocalInetAddress();
+
+            byte[] b = NetworkInterface.getByInetAddress(ip)
+                    .getHardwareAddress();
+            StringBuffer buffer = new StringBuffer();
+            for (int i = 0; i < b.length; i++) {
+                if (i != 0) {
+                    buffer.append(':');
+                }
+                String str = Integer.toHexString(b[i]&0xFF);
+                buffer.append(str.length() == 1 ? 0 + str : str);
+            }
+            strMacAddr = buffer.toString().toUpperCase();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        // AvcLog.printd("yttest", "strMacAddr:" + strMacAddr);
+        //String mac = getMac();
+        // AvcLog.printd("yttest" ,"mac:"+mac);
+        return strMacAddr;
+    }
+
+    /**
+     * 获取移动设备本地IP
+     * @return
+     */
+    protected static InetAddress getLocalInetAddress() {
+        InetAddress ip = null;
+        try {
+            //列举
+            Enumeration en_netInterface = NetworkInterface.getNetworkInterfaces();
+            while (en_netInterface.hasMoreElements()) {//是否还有元素
+                NetworkInterface ni = (NetworkInterface) en_netInterface.nextElement();//得到下一个元素
+                Enumeration en_ip = ni.getInetAddresses();//得到一个ip地址的列举
+                while (en_ip.hasMoreElements()) {
+                    ip = (InetAddress) en_ip.nextElement();
+                    if (!ip.isLoopbackAddress() && ip.getHostAddress().indexOf(":") == -1)
+                        break;
+                    else
+                        ip = null;
+                }
+                if (ip != null) {
+                    break;
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return ip;
+    }
+
+    //获取当前连接网络的网卡的mac地址
+    private static String parseByte(byte b) {
+        String s = "00" + Integer.toHexString(b)+":";
+        return s.substring(s.length() - 3);
+    }
+    /**
+     * 获取当前系统连接网络的网卡的mac地址
+     * @return
+     */
+    @SuppressLint("NewApi")
+    public static final String getMac() {
+        byte[] mac = null;
+        StringBuffer sb = new StringBuffer();
+        try {
+            Enumeration<NetworkInterface> netInterfaces = NetworkInterface.getNetworkInterfaces();
+            while (netInterfaces.hasMoreElements()) {
+                NetworkInterface ni = netInterfaces.nextElement();
+                Enumeration<InetAddress> address = ni.getInetAddresses();
+
+                while (address.hasMoreElements()) {
+                    InetAddress ip = address.nextElement();
+                    if (ip.isAnyLocalAddress() || !(ip instanceof Inet4Address) || ip.isLoopbackAddress())
+                        continue;
+                    if (ip.isSiteLocalAddress())
+                        mac = ni.getHardwareAddress();
+                    else if (!ip.isLinkLocalAddress()) {
+                        mac = ni.getHardwareAddress();
+                        break;
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+
+        if(mac != null){
+            for(int i=0 ;i<mac.length ;i++){
+                sb.append(parseByte(mac[i]));
+            }
+            return sb.substring(0, sb.length()-1);
+        }else {
+            return null;
+        }
+    }
+
+    /**
+     * Bitmap 转化为 ARGB 数据，再转化为 NV21 数据
+     ** @param src 传入的 Bitmap，格式为 Bitmap.Config.ARGB_8888
+     * @param width NV21 图像的宽度
+     * @param height NV21 图像的高度
+     * @return nv21 数据
+     */
+    public static byte[] bitmapToNv21(Bitmap src, int width, int height)
+    {
+        if (src != null && src.getWidth() >= width && src.getHeight() >= height) {
+            int[] argb = new int[width * height];
+            src.getPixels(argb, 0, width, 0, 0, width, height);
+            return argbToNv21(argb, width, height);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * ARGB 数据转化为 NV21 数据
+     *
+     * @param argb argb 数 据
+     * @param width 宽度
+     * @param height 高度
+     * @return nv21 数据
+     */
+    private static byte[] argbToNv21(int[] argb, int width, int height) {
+        int frameSize = width * height;
+        int yIndex = 0;
+        int uvIndex = frameSize;
+        int index = 0;
+        byte[] nv21 = new byte[width * height * 3 / 2];
+        for (int j = 0; j < height; ++j) {
+            for (int i = 0; i < width; ++i) {
+                int R = (argb[index] & 0xFF0000) >> 16;
+                int G = (argb[index] & 0x00FF00) >> 8;
+                int B = argb[index] & 0x0000FF;
+                int Y = (66 * R + 129 * G + 25 * B + 128 >> 8) + 16;
+                int U = (-38 * R - 74 * G + 112 * B + 128 >> 8) + 128;
+                int V = (112 * R - 94 * G - 18 * B + 128 >> 8) + 128;
+                nv21[yIndex++] = (byte) (Y < 0 ? 0 : (Y > 255 ? 255 : Y));
+                if (j % 2 == 0 && index % 2 == 0 && uvIndex < nv21.length
+                        - 2) {
+                    nv21[uvIndex++] = (byte) (V < 0 ? 0 : (V > 255 ?
+                            255 : V));
+                    nv21[uvIndex++] = (byte) (U < 0 ? 0 : (U > 255 ? 255 : U));
+                }
+
+                ++index;
+            }
+        }
+        return nv21;
+    }
+    /**
+     * 确保传给引擎的NV21数据宽度为4的倍数，高为2的倍数
+     *
+     * @param bitmap 传入的bitmap
+     * @return 调整后的bitmap
+     */
+    public static Bitmap alignBitmapForNv21(Bitmap bitmap) {
+        if (bitmap == null || bitmap.getWidth() < 4 || bitmap.getHeight() < 2) {
+            return null;
+        }
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+
+        boolean needAdjust = false;
+        while (width % 4 != 0) {
+            width--;
+            needAdjust = true;
+        }
+        if (height % 2 != 0) {
+            height--;
+            needAdjust = true;
+        }
+
+        if (needAdjust) {
+            bitmap = imageCrop(bitmap, new Rect(0, 0, width, height));
+        }
+        return bitmap;
+    }
+
+    /**
+     * 裁剪bitmap
+     *
+     * @param bitmap 传入的bitmap
+     * @param rect   需要被裁剪的区域
+     * @return 被裁剪后的bitmap
+     */
+    public static Bitmap imageCrop(Bitmap bitmap, Rect rect) {
+        if (bitmap == null || rect == null || rect.isEmpty() || bitmap.getWidth() < rect.right || bitmap.getHeight() < rect.bottom) {
+            return null;
+        }
+        return Bitmap.createBitmap(bitmap, rect.left, rect.top, rect.width(), rect.height(), null, false);
+    }
+
+    public static Bitmap getBitmapFromUri(Uri uri, Context context) {
+        if (uri == null || context == null) {
+            return null;
+        }
+        try {
+            return MediaStore.Images.Media.getBitmap(context.getContentResolver(), uri);
+        } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }

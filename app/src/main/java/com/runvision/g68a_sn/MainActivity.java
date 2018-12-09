@@ -44,10 +44,9 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.arcsoft.facedetection.AFD_FSDKFace;
-import com.arcsoft.facerecognition.AFR_FSDKFace;
-import com.arcsoft.facerecognition.AFR_FSDKMatching;
+import com.arcsoft.face.FaceFeature;
+import com.arcsoft.face.FaceSimilar;
+import com.arcsoft.face.LivenessInfo;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.jzxiang.pickerview.TimePickerDialog;
@@ -65,7 +64,7 @@ import com.runvision.bean.AtndResponse;
 import com.runvision.bean.Cours;
 import com.runvision.bean.CoursDao;
 import com.runvision.bean.DaoSession;
-import com.runvision.bean.FaceInfo;
+import com.runvision.bean.FaceInfoss;
 import com.runvision.bean.IDCard;
 import com.runvision.bean.IDCardDao;
 import com.runvision.bean.ImageStack;
@@ -110,7 +109,6 @@ import com.zkteco.android.biometric.module.idcard.IDCardReader;
 import com.zkteco.android.biometric.module.idcard.IDCardReaderFactory;
 import com.zkteco.android.biometric.module.idcard.exception.IDCardReaderException;
 import com.zkteco.android.biometric.module.idcard.meta.IDCardInfo;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -125,7 +123,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
-
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -432,13 +429,13 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     break;
                 case Const.MSG_FACE://开启一比n处理
                     if (!admin_is_login) {
-                        FaceInfo info = (FaceInfo) msg.obj;
+                        FaceInfoss info = (FaceInfoss) msg.obj;
                         openOneVsMoreThread(info);
                     }
                     break;
                 case Const.MSG_READ_CARD:
                     mHandler.removeMessages(Const.MSG_READ_CARD);
-                    startIdCardThread();
+//                    startIdCardThread();
                     break;
                 case Const.READ_CARD_INFO:
                     mHandler.removeMessages(Const.COMPER_FINIASH);
@@ -557,6 +554,10 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     break;
                 case Const.SOCKRT_SENDIMAGE:/*VMS批量导入操作*/
                     batchImport();
+                    break;
+                case 100:/*VMS批量导入结束操作---一个线程*/
+                    int success0 = (int) msg.obj;
+                    bacthOk0 = success0;
                     break;
                 case 101:/*VMS批量导入结束操作*/
                     int success1 = (int) msg.obj;
@@ -741,7 +742,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
     @Override
     protected void onDestroy() {
-        MyApplication.mFaceLibCore.UninitialAllEngine();
         super.onDestroy();
     }
 
@@ -882,7 +882,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     /**
      * 开启一个1：N的线程
      */
-    private void openOneVsMoreThread(FaceInfo info) {
+    private void openOneVsMoreThread(FaceInfoss info) {
         if (!oneVsMoreThreadStauts && isOpenOneVsMore && Infra_red) {
             oneVsMoreThreadStauts = true;
             OneVsMoreThread thread = new OneVsMoreThread(info);
@@ -960,48 +960,56 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     /*1：1比对操作*/
     public void faceComperFrame(Bitmap bmp) {
         //提取人脸
-        List<AFD_FSDKFace> result = new ArrayList<AFD_FSDKFace>();
+        List<com.arcsoft.face.FaceInfo> result = new ArrayList<com.arcsoft.face.FaceInfo>();
+        List<LivenessInfo> livenessInfoList = new ArrayList<>();
         byte[] des = CameraHelp.rotateCamera(imageStack.pullImageInfo().getData(), 640, 480, 90);
-        MyApplication.mFaceLibCore.FaceDetection(des, 480, 640, result);
 
+        MyApplication.mFaceLibCore.FaceDetection(des, 480, 640, result);
         if (result.size() == 0) {
             return;
         }
-        //活体
-        List<com.arcsoft.liveness.FaceInfo> faceInfos = new ArrayList<>();
-        com.arcsoft.liveness.FaceInfo faceInfo = new com.arcsoft.liveness.FaceInfo(result.get(0).getRect(), result.get(0).getDegree());
-        faceInfos.add(faceInfo);
-        if (!MyApplication.mFaceLibCore.detect(des, 480, 640, faceInfos)) {
+        Boolean live = true;
+        if (SPUtil.getBoolean(Const.KEY_ISOPENLIVE, Const.OPEN_LIVE)) {
+            live = MyApplication.mFaceLibCore.Livingthing(des, 480, 640, result, livenessInfoList);
+        }
+        if (!live) {
             return;
         }
-        AppData.getAppData().setOneFaceBmp(CameraHelp.getFaceImgByInfraredJpg(result.get(0).getRect().left, result.get(0).getRect().top, result.get(0).getRect().right, result.get(0).getRect().bottom, CameraHelp.getBitMap(des)));
-        AFR_FSDKFace face = new AFR_FSDKFace();
-        int ret = MyApplication.mFaceLibCore.FaceFeature(des, 480, 640, result.get(0).getRect(), result.get(0).getDegree(), face);
-        if (ret != 0) {
-            return;
-        }
-        //提取身份证
-        int w = bmp.getWidth() % 2 == 0 ? bmp.getWidth() : bmp.getWidth() - 1;
-        int h = bmp.getHeight() % 2 == 0 ? bmp.getHeight() : bmp.getHeight() - 1;
-        byte[] cardDes = CameraHelp.getNV21(w, h, bmp);
-        List<AFD_FSDKFace> result_card = new ArrayList<>();
-        MyApplication.mFaceLibCore.FaceDetection(cardDes, w, h, result_card);
-        if (result_card.size() == 0) {
-            return;
-        }
-        AFR_FSDKFace card = new AFR_FSDKFace();
-        ret = MyApplication.mFaceLibCore.FaceFeature(cardDes, w, h, result_card.get(0).getRect(), result_card.get(0).getDegree(), card);
+        AppData.getAppData().setOneFaceBmp(CameraHelp.getXFaceImgByInfraredJpg(result.get(0).getRect().left, result.get(0).getRect().top, result.get(0).getRect().right, result.get(0).getRect().bottom, CameraHelp.getBitMap(des)));
+        // AFR_FSDKFace face = new AFR_FSDKFace();
+        FaceFeature faceFeature = new FaceFeature();
+        int ret = MyApplication.mFaceLibCore.FaceFeatureExtract(des, 480, 640, result.get(0), faceFeature);
         if (ret != 0) {
             return;
         }
 
-        //比对分数
-        AFR_FSDKMatching score = new AFR_FSDKMatching();
-        ret = MyApplication.mFaceLibCore.FacePairMatching(face, card, score);
+        //提取身份证
+        bmp = CameraHelp.alignBitmapForNv21(bmp);//裁剪
+        int w = bmp.getWidth();
+        int h = bmp.getHeight();
+        byte[] cardDes = CameraHelp.bitmapToNv21(bmp, w, h);//转nv21
+        List<com.arcsoft.face.FaceInfo> result_card = new ArrayList<com.arcsoft.face.FaceInfo>();
+        MyApplication.mFaceLibCore.FaceDetection(cardDes, w, h, result_card);
+
+        if (result_card.size() == 0) {
+            return;
+        }
+        FaceFeature card = new FaceFeature();
+        ret = MyApplication.mFaceLibCore.FaceFeatureExtract(cardDes, w, h, result_card.get(0), card);
         if (ret != 0) {
             return;
         }
-        AppData.getAppData().setoneCompareScore(score.getScore());
+
+        FaceSimilar score = new FaceSimilar();
+        while (true) {
+            MyApplication.mFaceLibCore.FacePairMatching(faceFeature, card, score);
+            if (score.getScore() == 0) {
+                break;
+            } else {
+                AppData.getAppData().setoneCompareScore(score.getScore());
+                break;
+            }
+        }
     }
 
     private BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
@@ -1567,12 +1575,12 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
      * 1：N比对操作线程
      */
     class OneVsMoreThread extends Thread {
-        private FaceInfo info;
-        AFR_FSDKFace face;
-        AFR_FSDKMatching score;
+        private FaceInfoss info;
+        FaceFeature face;
+        FaceSimilar score;
         User user;
 
-        public OneVsMoreThread(FaceInfo info) {
+        public OneVsMoreThread(FaceInfoss info) {
             this.info = info;
         }
 
@@ -1580,14 +1588,13 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         public void run() {
             if (isOpenOneVsMore != false) {
                 if (face == null) {
-                    face = new AFR_FSDKFace();
+                    face = new FaceFeature();
                 }
-                int ret = MyApplication.mFaceLibCore.FaceFeature(info.getDes(), 480, 640, info.getFace().getRect(), info.getFace().getDegree(), face);
+                int ret = MyApplication.mFaceLibCore.FaceFeatureExtract(info.getDes(), 480, 640, info.getFace(), face);
                 if (ret == 0) {
-                    AppData.getAppData().SetNFaceBmp(CameraHelp.getFaceImgByInfraredJpg(info.getFace().getRect().left, info.getFace().getRect().top, info.getFace().getRect().right, info.getFace().getRect().bottom, CameraHelp.getBitMap(info.getDes())));
                     float fenshu = SPUtil.getFloat(Const.KEY_ONEVSMORESCORE, Const.ONEVSMORE_SCORE);
                     if (score == null) {
-                        score = new AFR_FSDKMatching();
+                        score = new FaceSimilar();
                     }
                     if (MyApplication.mList.size() > 0) {
                         for (Map.Entry<String, byte[]> entry : MyApplication.mList.entrySet()) {
@@ -1596,7 +1603,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                             }
                             String fileName = (String) entry.getKey();
                             byte[] mTemplate = (byte[]) entry.getValue();
-                            AFR_FSDKFace face3 = new AFR_FSDKFace(mTemplate);
+                            FaceFeature face3 = new FaceFeature(mTemplate);
                             MyApplication.mFaceLibCore.FacePairMatching(face3, face, score);
                             if (score.getScore() >= fenshu) {
                                 if (user == null) {
@@ -1610,6 +1617,9 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
 
                                     }
                                 }
+                                byte[] bitmap_byte = info.getDes();
+                                //抓拍动态图片保存
+                                AppData.getAppData().SetNFaceBmp(CameraHelp.getYFaceImgByInfraredJpg(info.getFace().getRect().left, info.getFace().getRect().top, info.getFace().getRect().right, info.getFace().getRect().bottom, CameraHelp.getBitMap(bitmap_byte)));
                                 fenshu = score.getScore();
                                 continue;
                             }
@@ -1629,13 +1639,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                 if (MyApplication.mList.size() < 1000) {
                     try {
                         Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    oneVsMoreThreadStauts = false;
-                } else if (MyApplication.mList.size() < 3000) {
-                    try {
-                        Thread.sleep(500);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -1922,7 +1925,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     private List<File> dataList3 = null;
     //三个线程消息传递对应的标志为
     private int[] loadFlag = {101, 102, 103};
-    private int bacthOk1, bacthOk2, bacthOk3 = 0;
+    private int bacthOk0, bacthOk1, bacthOk2, bacthOk3 = 0;
     private int parts = 0;
     private ProgressBar progesss1, progesss2, progesss3;
     private TextView progesssValue1, progesssValue2, progesssValue3;
@@ -1953,33 +1956,36 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         return mImportFile;
     }
 
+    /**
+     * 批量导入模板
+     */
     private void batchImport() {
-
         List<File> mImportFile = getImagePathFile();
         if (mImportFile == null) {
             return;
         }
-
+        bacthOk0 = 0;
+        bacthOk1 = 0;
+        bacthOk2 = 0;
+        bacthOk3 = 0;
         Const.VMS_BATCH_IMPORT_TEMPLATE = true;
-
         System.out.println("一共：" + mSum);
         //将文件数据分成三个集合
         cuttingList(mImportFile);
-
         if (parts == 1) {
-            BatchImport impory = new BatchImport(dataList1, mHandler, loadFlag[0]);
+            BatchImport impory = new BatchImport(socketThread,dataList1, mHandler, loadFlag[0]);
             Thread thread = new Thread(impory);
             thread.start();
         } else if (parts == 3) {
-            BatchImport impory1 = new BatchImport(dataList1, mHandler, loadFlag[0]);
+            BatchImport impory1 = new BatchImport(socketThread,dataList1, mHandler, loadFlag[1]);
             Thread thread1 = new Thread(impory1);
             thread1.start();
 
-            BatchImport impory2 = new BatchImport(dataList2, mHandler, loadFlag[1]);
+            BatchImport impory2 = new BatchImport(socketThread,dataList2, mHandler, loadFlag[2]);
             Thread thread2 = new Thread(impory2);
             thread2.start();
 
-            BatchImport impory3 = new BatchImport(dataList3, mHandler, loadFlag[2]);
+            BatchImport impory3 = new BatchImport(socketThread,dataList3, mHandler, loadFlag[3]);
             Thread thread3 = new Thread(impory3);
             thread3.start();
         }

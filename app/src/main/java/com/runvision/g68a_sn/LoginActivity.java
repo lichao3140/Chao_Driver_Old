@@ -38,8 +38,9 @@ import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.arcsoft.facedetection.AFD_FSDKFace;
-import com.arcsoft.facerecognition.AFR_FSDKFace;
+
+import com.arcsoft.face.FaceFeature;
+import com.arcsoft.face.FaceInfo;
 import com.github.ybq.android.spinkit.style.Wave;
 import com.google.gson.Gson;
 import com.runvision.bean.Login;
@@ -370,17 +371,17 @@ public class LoginActivity extends FragmentActivity {
 
         byte[] nv21 = CameraHelp.getNV21(w, h, bitmap);
 
-        List<AFD_FSDKFace> result = new ArrayList<AFD_FSDKFace>();
+        List<FaceInfo> result = new ArrayList<FaceInfo>();
         MyApplication.mFaceLibCore.FaceDetection(nv21, w, h, result);
-        if (result.size() != 0) {
-            AFR_FSDKFace face = new AFR_FSDKFace();
-            int ret = MyApplication.mFaceLibCore.FaceFeature(nv21, w, h, result.get(0).getRect(), result.get(0).getDegree(), face);
+        if ((MyApplication.mFaceLibCore.FaceDetection(nv21, w, h, result) == 0)&&(result.size() > 0)) {
+            FaceFeature faceFeature = new FaceFeature();
+            int ret = MyApplication.mFaceLibCore.FaceFeatureExtract(nv21, w, h,result.get(0), faceFeature);
             if (ret == 0) {
-                CameraHelp.saveFile(path, fileName+".data", face.getFeatureData());
+                CameraHelp.saveFile(path, fileName+".data", faceFeature.getFeatureData());
                 CameraHelp.saveImgToDisk(ImagePath, fileName+".jpg", bitmap);
                 FileUtils.saveFile(bitmap, fileName, "FaceTemplate");
-                MyApplication.mList.put(fileName, face.getFeatureData());
-                generateTemplate = true;
+                MyApplication.mList.put(fileName, faceFeature.getFeatureData());
+                generateTemplate=true;
                 System.out.println("存入模板库");
             } else {
                 generateTemplate = false;

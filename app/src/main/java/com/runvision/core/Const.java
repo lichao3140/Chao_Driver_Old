@@ -64,16 +64,8 @@ public class Const {
      */
     public static final int G68A_WIDTH = 600;
 
-    public static final String APP_ID = "J3Yscp63XC1M1ut6Fk6DguTtndqj59Y3wTQcGJtQur5r";
-    public static final String APP_KEY_FD = "94iPZ7LMDyoDznioW6hFJhvtQGVpkezWbnDSPZfMaofj";
-    public static final String APP_KEY_FT = "94iPZ7LMDyoDznioW6hFJhvmEsEfZsxe5yivs4gbMwKC";
-    public static final String APP_KEY_FR = "94iPZ7LMDyoDznioW6hFJhwP3sYTk2mz9Qz9nA52CVYM";
-    public static final String APP_KEY_AGE = "94iPZ7LMDyoDznioW6hFJhwdNg4pLf6SsJPqXtFWWEH7";
-    public static final String APP_KEY_GEN = "94iPZ7LMDyoDznioW6hFJhwkY5L2ctnincGmrNYyQCiZ";
-
-    // 活体检测
-    public static final String LIVENESSAPPID = "J3Yscp63XC1M1ut6Fk6DguUGGqdGZocc2c8QK2GfnzTt";
-    public static final String LIVENESSSDKKEY = "9LQgVXRmKTXtph3pbzibo9mCErzEC5Gg8yjX3JyU79FP";
+    public static final String APP_ID = "J3Yscp63XC1M1ut6Fk6DguTeTqKPKJZRZ3BukyHnuE5E";
+    public static final String SDK_KEY = "DMco6iZeeVhdeXJKQUENi5KAa64f5SYCgzyVDSELc1dv";
 
     //记录人脸定位算法是否成功
     public static boolean afdInit = false;
@@ -112,6 +104,8 @@ public class Const {
     public final static int NMSG_DCHNL_SET = 0x10020200;
     //收到模版
     public final static int NMSG_FLIB_ADD = 0x00010100;
+    //下发模板错误信息
+    public final static int NMSG_ERROR_MSG = 0x00010802;
 
     public final static char TYPE_CARD = 0x01;
     public final static char TYPE_ONEVSMORE = 0x02;
@@ -179,6 +173,7 @@ public class Const {
     public static Boolean BATCH_IMPORT_TEMPLATE = false;
     public static Boolean VMS_BATCH_IMPORT_TEMPLATE = false;
     public static Boolean VMS_TEMPLATE = false;
+    public static int VMS_ERROR_TEMPLATE = 0;
 
     public static int BATCH_FLAG = 0;
 

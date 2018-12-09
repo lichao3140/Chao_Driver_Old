@@ -26,6 +26,43 @@ public class AppData {
     private Bitmap onefacebmp;
     private Bitmap nfaceBmp=null;
 
+    private String errormsgidnum="";
+    private String errormsgname="";
+    private String errormsgpicname="";
+    private String erroemsg="";
+
+    public String getErroemsg() {
+        return erroemsg;
+    }
+
+    public void setErroemsg(String erroemsg) {
+        this.erroemsg = erroemsg;
+    }
+
+    public String getErrormsgidnum() {
+        return errormsgidnum;
+    }
+
+    public void setErrormsgidnum(String errormsgidnum) {
+        this.errormsgidnum = errormsgidnum;
+    }
+
+    public String getErrormsgname() {
+        return errormsgname;
+    }
+
+    public void setErrormsgname(String errormsgname) {
+        this.errormsgname = errormsgname;
+    }
+
+    public String getErrormsgpicname() {
+        return errormsgpicname;
+    }
+
+    public void setErrormsgpicname(String errormsgpicname) {
+        this.errormsgpicname = errormsgpicname;
+    }
+
     private String facepicName;
 
     private User user;

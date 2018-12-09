@@ -3,8 +3,8 @@ package com.runvision.webcore.handler;
 import android.graphics.Bitmap;
 import android.os.Environment;
 
-import com.arcsoft.facedetection.AFD_FSDKFace;
-import com.arcsoft.facerecognition.AFR_FSDKFace;
+import com.arcsoft.face.FaceFeature;
+import com.arcsoft.face.FaceInfo;
 import com.runvision.bean.Sex;
 import com.runvision.bean.Type;
 import com.runvision.bean.WebDataResultJson;
@@ -18,19 +18,16 @@ import com.runvision.utils.IDUtils;
 import com.runvision.utils.JsonUtils;
 import com.yanzhenjie.andserver.RequestHandler;
 import com.yanzhenjie.andserver.util.HttpRequestParser;
-
 import org.apache.httpcore.HttpException;
 import org.apache.httpcore.HttpRequest;
 import org.apache.httpcore.HttpResponse;
 import org.apache.httpcore.entity.StringEntity;
 import org.apache.httpcore.protocol.HttpContext;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-//import com.face.sv.FaceInfo;
 
 public class InsertTemplate implements RequestHandler {
     @Override
@@ -46,6 +43,7 @@ public class InsertTemplate implements RequestHandler {
         String cardNo = params.get("cardNo");
         String imageBase64 = params.get("img");
         Bitmap bmp = FileUtils.stringtoBitmap(imageBase64);
+        // Bitmap bmp = FileUtils.decodeImg(imageBase64);
         User user = new User(name, Type.getType(type).getDesc(), Sex.getSex(sex).getDesc(), age, workNo, cardNo, "", DateTimeUtils.getTime());
         String msg = insertTemplate(bmp, user);
         WebDataResultJson dataResultJson;
@@ -62,13 +60,16 @@ public class InsertTemplate implements RequestHandler {
         //转RGB
         //  byte[] mBGR = FileUtils.bitmapToBGR24(bmp);
         //生成随机图片ID
-
+        bmp =CameraHelp.alignBitmapForNv21(bmp);//裁剪
         String path = Environment.getExternalStorageDirectory() + "/FaceAndroid/Template/";
         String ImagePath = Environment.getExternalStorageDirectory() + "/FaceAndroid/FaceTemplate/";
-        int w = bmp.getWidth() % 2 == 0 ? bmp.getWidth() : bmp.getWidth() - 1;
-        int h = bmp.getHeight() % 2 == 0 ? bmp.getHeight() : bmp.getHeight() - 1;
 
-        byte[] nv21 = CameraHelp.getNV21(w, h, bmp);
+
+        int w = bmp.getWidth();
+        int h = bmp.getHeight();
+
+        byte[] nv21 = CameraHelp.bitmapToNv21(bmp,w, h);//转nv21
+        // bitmapToNv21
 
         String imageID = IDUtils.genImageName();
         user.setTemplateImageID(imageID);
@@ -81,15 +82,15 @@ public class InsertTemplate implements RequestHandler {
             return "图片转码错误";
         }
 
-        List<AFD_FSDKFace> result = new ArrayList<AFD_FSDKFace>();
+
+        List<FaceInfo> result = new ArrayList<FaceInfo>();
         MyApplication.mFaceLibCore.FaceDetection(nv21, w, h, result);
-        if (result.size() != 0) {
-            AFR_FSDKFace face = new AFR_FSDKFace();
-            int ret = MyApplication.mFaceLibCore.FaceFeature(nv21, w, h, result.get(0).getRect(), result.get(0).getDegree(), face);
+        if ((MyApplication.mFaceLibCore.FaceDetection(nv21, w, h, result) == 0)&&(result.size() > 0)) {
+            FaceFeature face = new FaceFeature();
+            int ret = MyApplication.mFaceLibCore.FaceFeatureExtract(nv21, w, h, result.get(0), face);
             if (ret == 0) {
                 CameraHelp.saveFile(path, imageID + ".data", face.getFeatureData());
                 CameraHelp.saveImgToDisk(ImagePath, imageID + ".jpg", bmp);
-                FileUtils.saveFile(bmp, imageID, "FaceTemplate");
                 // Template t = new Template(mfilename, face);
                 MyApplication.mList.put(imageID, face.getFeatureData());
                 //   generateTemplate = true;
