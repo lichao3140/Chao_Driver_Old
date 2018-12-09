@@ -67,11 +67,9 @@ public class MyApplication extends Application {
         //初始化日志打印
         LogToFile.init(this);
         String serlia = getSerialNumber();
-        // G68A设备没有序列号
-//       if (serlia.equals("") || serlia.length() < 4 || !serlia.substring(0, 4).equals("R50A")) {
-//            LogToFile.e(TAG,"该设备没有序列号");
-//            finishActivity();
-//        }
+       if (serlia.equals("") || serlia.length() < 4 || !serlia.substring(0, 4).equals("R50A")) {
+            finishActivity();
+        }
         File[] fs = context.getFilesDir().listFiles();
         String ff = null;
         for (File f : fs){
