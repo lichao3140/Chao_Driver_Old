@@ -54,16 +54,6 @@ public class Const {
      */
     public static final int PRE_WIDTH = 640;
 
-    /**
-     * G68A设备屏幕高
-     */
-    public static final int G68A_HEIGHT = 976;
-
-    /**
-     * G68A设备屏幕宽
-     */
-    public static final int G68A_WIDTH = 600;
-
     public static final String APP_ID = "J3Yscp63XC1M1ut6Fk6DguTeTqKPKJZRZ3BukyHnuE5E";
     public static final String SDK_KEY = "DMco6iZeeVhdeXJKQUENi5KAa64f5SYCgzyVDSELc1dv";
 

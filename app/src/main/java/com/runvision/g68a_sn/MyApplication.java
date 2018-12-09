@@ -76,7 +76,7 @@ public class MyApplication extends Application {
             System.out.println(f);
             ff = f.toString();
         }
-        FileUtils.copyFile(ff,Environment.getExternalStorageDirectory() + "/FaceAndroid/.asf_install.dat");
+        FileUtils.copyFile(ff,Environment.getExternalStorageDirectory() + "/c/.asf_install.dat");
         FileUtils.copyFile(Environment.getExternalStorageDirectory() + "/FaceAndroid/.asf_install.dat", getFilesDir().getAbsolutePath() + File.separator + ".asf_install.dat");
 
 

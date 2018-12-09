@@ -15,7 +15,6 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -95,9 +94,6 @@ import com.runvision.utils.TimeCompareUtil;
 import com.runvision.utils.TimeUtils;
 import com.runvision.utils.UUIDUtil;
 import com.runvision.webcore.ServerManager;
-import com.telpo.tps550.api.TelpoException;
-import com.telpo.tps550.api.idcard.IdCard;
-import com.telpo.tps550.api.idcard.IdentityInfo;
 import com.zhy.http.okhttp.OkHttpUtils;
 import com.zhy.http.okhttp.callback.StringCallback;
 import com.zkteco.android.IDReader.IDPhotoHelper;
@@ -427,10 +423,12 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     initSignCourse();
                     break;
                 case Const.MSG_FACE://开启一比n处理
-                    if (!admin_is_login) {
-                        FaceInfoss info = (FaceInfoss) msg.obj;
-                        openOneVsMoreThread(info);
-                    }
+//                    if (!admin_is_login) {
+//                        FaceInfoss info = (FaceInfoss) msg.obj;
+//                        openOneVsMoreThread(info);
+//                    }
+                    FaceInfoss info = (FaceInfoss) msg.obj;
+                    openOneVsMoreThread(info);
                     break;
                 case Const.READ_CARD://收到读卡器的信息
                     mHandler.removeMessages(Const.COMPER_FINIASH);
@@ -705,7 +703,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     @Override
     protected void onRestart() {
         if (admin_is_login) {
-            mHandler.sendMessageDelayed(mHandler.obtainMessage(Const.MSG_READ_CARD, ""), 2000);
+//            mHandler.sendMessageDelayed(mHandler.obtainMessage(Const.MSG_READ_CARD, ""), 2000);
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);//打开手势滑动
         } else {
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);//关闭手势滑动
@@ -1111,7 +1109,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     admin_is_login = true;
                     drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
                 }
-                mHandler.sendMessageDelayed(mHandler.obtainMessage(Const.MSG_READ_CARD, ""), 0);
+//                mHandler.sendMessageDelayed(mHandler.obtainMessage(Const.MSG_READ_CARD, ""), 0);
 
                 mHandler.postDelayed(() -> GPIOHelper.openDoor(false), SPUtil.getInt(Const.KEY_OPENDOOR, Const.CLOSE_DOOR_TIME) * 1000);
 
@@ -1597,10 +1595,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         public void run() {
             super.run();
             while (true) {
-                //Log.i("Gavin","redflag:" +redflag);
-                // G68A设备红外接口不一样
-                int status = GPIOHelper.readStatus();
-                status = 1;
+                int status = 1;
                 if (redflag == true) {
                     try {
                         Thread.sleep(1500);

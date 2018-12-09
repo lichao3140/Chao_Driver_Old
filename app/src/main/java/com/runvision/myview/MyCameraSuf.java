@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-
 /**
  * Created by Administrator on 2018/6/1.
  */
@@ -32,8 +31,6 @@ public class MyCameraSuf extends SurfaceView implements SurfaceHolder.Callback, 
     private static final String TAG = "sulin";
     private SurfaceHolder mSurfaceHolder;
     private Camera mCamera;
-    private int mWidth;
-    private int mHeight;
     private Context mContext;
     private Camera.Parameters parameters;
     private Camera.Size previewSize;
@@ -78,47 +75,45 @@ public class MyCameraSuf extends SurfaceView implements SurfaceHolder.Callback, 
         setWillNotDraw(false);
     }
 
+
     public void openCamera() {
         if (cameraStaus) {
             return;
         }
         releaseCamera();
         try {
-            // G68A 开启前置摄像头
-           mCamera = Camera.open(0);
+            mCamera = Camera.open(0);
         } catch (Exception e) {
             mCamera = null;
-            Log.d("lichao", "openCamera: open相机失败");
+            Log.d("sulin", "openCamera: open相机失败");
         }
         initCamera();
-
     }
+
     private void initCamera(){
         if (mCamera != null) {
             try {
-                    mCamera.setPreviewCallback(this);
-                    if (parameters == null) {
-                        parameters = mCamera.getParameters();
-                    }
-                    DisplayMetrics metrics = new DisplayMetrics();
-                    WindowManager WM = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
-                    WM.getDefaultDisplay().getMetrics(metrics);
-                    previewSize = getBestSupportedSize(parameters.getSupportedPreviewSizes(), metrics);
-                    // 预览适配
+                mCamera.setPreviewCallback(this);
+                if (parameters == null) {
+                    parameters = mCamera.getParameters();
+                }
+//                    DisplayMetrics metrics = new DisplayMetrics();
+//                    WindowManager WM = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
+//                    WM.getDefaultDisplay().getMetrics(metrics);
+//                    previewSize = getBestSupportedSize(parameters.getSupportedPreviewSizes(), metrics);
 //                    parameters.setPreviewSize(previewSize.width, previewSize.height);
-                    //设置相机预览格式
-                    parameters.setPreviewFormat(ImageFormat.NV21);
-                    parameters.setPictureSize(Const.PRE_WIDTH, Const.PRE_HEIGTH);
-                    mCamera.setParameters(parameters);
-                    //设置预览方向
-                    mCamera.setDisplayOrientation(270);
-                    mCamera.setPreviewDisplay(mSurfaceHolder);
-                    mCamera.startPreview();
-                    cameraStaus = true;
+                parameters.setPictureSize(Const.PRE_WIDTH, Const.PRE_HEIGTH);
+                parameters.setPreviewFormat(ImageFormat.NV21);
+                mCamera.setParameters(parameters);
+                //G701---90   G702---270
+                mCamera.setDisplayOrientation(270);
+                mCamera.setPreviewDisplay(mSurfaceHolder);
+                mCamera.startPreview();
+                cameraStaus = true;
                 if (camerType == 0) {
                     mProportionH = (float) mScreenHeight / (float) Const.PRE_WIDTH;
                     mProportionW = (float) mScreenWidth / (float) Const.PRE_HEIGTH;
-                } else if (camerType == 1) {
+                }else if(camerType==1) {
                     FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(480, 640);
                     this.setLayoutParams(lp);
                     mProportionH = (float)640/(float) 640;
@@ -130,10 +125,12 @@ public class MyCameraSuf extends SurfaceView implements SurfaceHolder.Callback, 
         }
     }
 
+
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         Log.i(TAG, "surfaceCreated...:"+cameraStaus);
         openCamera();
+
     }
 
     @Override
@@ -147,6 +144,7 @@ public class MyCameraSuf extends SurfaceView implements SurfaceHolder.Callback, 
         Log.i(TAG, "surfaceDestroyed..."+cameraStaus);
         releaseCamera();
     }
+
 
     public synchronized void releaseCamera() {
         if (!cameraStaus) {
@@ -184,39 +182,7 @@ public class MyCameraSuf extends SurfaceView implements SurfaceHolder.Callback, 
     @Override
     public void onPreviewFrame(byte[] bytes, Camera camera) {
         imgStack.pushImageInfo(bytes, System.currentTimeMillis());
-        mCameraData = bytes;
-
-        if (mCameraData == null) {
-            return;
-        }
     }
-
-    /*@Override
-    public void onPreviewFrame(byte[] data, Camera camera) {
-        //Log.d(TAG, "onPreviewFrame: ...........");
-        mCameraData = data;
-
-        if (mCameraData == null) {
-            return;
-        }
-
-        if (!Const.afdInit) {
-            return;
-        }
-        if (task != null) {
-            switch (task.getStatus()) {
-                case RUNNING:
-                    return;
-                case PENDING:
-                    task.cancel(false);
-                    break;
-                default:
-                    break;
-            }
-        }
-        task = new FaceFramTask(this);
-        task.execute();
-    }*/
 
     private Paint mPaint;
     private float nFaceLeft, nFaceTop, nFaceRight, nFaceBottom; // 人脸坐标
@@ -230,9 +196,8 @@ public class MyCameraSuf extends SurfaceView implements SurfaceHolder.Callback, 
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         mPaint.setColor(Color.GREEN);
-        // canvas.drawRect(nFaceLeft, nFaceTop, nFaceRight, nFaceBottom, mPaint);
-        if(camerType==1){
-            mScreenWidth=480;
+        if(camerType == 1){
+            mScreenWidth = 480;
         }
         float startX = mScreenWidth - nFaceRight;
         float startY = nFaceTop;
@@ -244,8 +209,6 @@ public class MyCameraSuf extends SurfaceView implements SurfaceHolder.Callback, 
         } else {
             mWeith = 30;
         }
-
-        // 左上
         canvas.drawLine(startX, startY, startX, startY + mWeith, mPaint);
         canvas.drawLine(startX, startY, startX + mWeith, startY, mPaint);
         // 左下
@@ -274,7 +237,6 @@ public class MyCameraSuf extends SurfaceView implements SurfaceHolder.Callback, 
          * 设置描边的粗细，单位：像素px 注意：当setStrokeWidth(0)的时候描边宽度并不为0而是只占一个像素
          */
         mPaint.setStrokeWidth(3);
-
     }
 
     private int mScreenWidth;
@@ -286,12 +248,11 @@ public class MyCameraSuf extends SurfaceView implements SurfaceHolder.Callback, 
         WM.getDefaultDisplay().getMetrics(outMetrics);
         mScreenWidth = outMetrics.widthPixels;
         mScreenHeight = outMetrics.heightPixels + 48;
-        Log.i("lichao", "屏幕分辨率W*H：" + mScreenWidth + "*" + mScreenHeight);
+        Log.i("run", "屏幕分辨率：" + mScreenWidth + "*" + mScreenHeight);
     }
 
     // 可能需要修改的
     public void setFacePamaer(Rect rect) {
-
         if (rect.top == 0 && rect.left == 0 && rect.right == 0 && rect.bottom == 0) {
             this.nFaceLeft = 0;
             this.nFaceTop = 0;
@@ -304,49 +265,6 @@ public class MyCameraSuf extends SurfaceView implements SurfaceHolder.Callback, 
             this.nFaceBottom = rect.bottom * mProportionH;
         }
         postInvalidate();
-    }
-
-    /**
-     * 通过对比得到与宽高比最接近的预览尺寸（如果有相同尺寸，优先选择）
-     * @param isPortrait 是否竖屏
-     * @param surfaceWidth 需要被进行对比的原宽
-     * @param surfaceHeight 需要被进行对比的原高
-     * @param preSizeList 需要对比的预览尺寸列表
-     * @return 得到与原宽高比例最接近的尺寸
-     */
-    public static  Camera.Size getCloselyPreSize(boolean isPortrait, int surfaceWidth, int surfaceHeight, List<Camera.Size> preSizeList) {
-        int reqTmpWidth;
-        int reqTmpHeight;
-        // 当屏幕为垂直的时候需要把宽高值进行调换，保证宽大于高
-        if (isPortrait) {
-            reqTmpWidth = surfaceHeight;
-            reqTmpHeight = surfaceWidth;
-        } else {
-            reqTmpWidth = surfaceWidth;
-            reqTmpHeight = surfaceHeight;
-        }
-        //先查找preview中是否存在与surfaceview相同宽高的尺寸
-        for(Camera.Size size : preSizeList){
-            if((size.width == reqTmpWidth) && (size.height == reqTmpHeight)){
-                return size;
-            }
-        }
-
-        // 得到与传入的宽高比最接近的size
-        float reqRatio = ((float) reqTmpWidth) / reqTmpHeight;
-        float curRatio, deltaRatio;
-        float deltaRatioMin = Float.MAX_VALUE;
-        Camera.Size retSize = null;
-        for (Camera.Size size : preSizeList) {
-            curRatio = ((float) size.width) / size.height;
-            deltaRatio = Math.abs(reqRatio - curRatio);
-            if (deltaRatio < deltaRatioMin) {
-                deltaRatioMin = deltaRatio;
-                retSize = size;
-            }
-        }
-
-        return retSize;
     }
 
     /**
@@ -370,5 +288,4 @@ public class MyCameraSuf extends SurfaceView implements SurfaceHolder.Callback, 
         }
         return bestSize;
     }
-
 }
