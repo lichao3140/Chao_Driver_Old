@@ -423,12 +423,10 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                     initSignCourse();
                     break;
                 case Const.MSG_FACE://开启一比n处理
-//                    if (!admin_is_login) {
-//                        FaceInfoss info = (FaceInfoss) msg.obj;
-//                        openOneVsMoreThread(info);
-//                    }
-                    FaceInfoss info = (FaceInfoss) msg.obj;
-                    openOneVsMoreThread(info);
+                    if (!admin_is_login) {
+                        FaceInfoss info = (FaceInfoss) msg.obj;
+                        openOneVsMoreThread(info);
+                    }
                     break;
                 case Const.READ_CARD://收到读卡器的信息
                     mHandler.removeMessages(Const.COMPER_FINIASH);

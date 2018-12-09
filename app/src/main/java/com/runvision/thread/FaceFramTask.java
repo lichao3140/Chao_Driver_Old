@@ -6,6 +6,7 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+
 import com.arcsoft.face.LivenessInfo;
 import com.runvision.bean.AppData;
 import com.runvision.bean.FaceInfoss;
@@ -16,8 +17,10 @@ import com.runvision.g68a_sn.MyApplication;
 import com.runvision.myview.MyCameraSuf;
 import com.runvision.utils.CameraHelp;
 import com.runvision.utils.SPUtil;
+
 import java.util.ArrayList;
 import java.util.List;
+
 
 /**
  * Created by Administrator on 2018/5/29.
