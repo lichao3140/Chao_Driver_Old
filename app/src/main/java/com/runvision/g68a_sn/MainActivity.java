@@ -182,7 +182,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     private boolean TipsFlag = false;
 
     private FaceFramTask faceDetectTask = null;
-//    private GetIDInfoTask mAsyncTask = null;
 
     private boolean bStop = false;
 
@@ -433,20 +432,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
                         openOneVsMoreThread(info);
                     }
                     break;
-//                case Const.MSG_READ_CARD:
-//                    mHandler.removeMessages(Const.MSG_READ_CARD);
-//                    startIdCardThread();
-//                    break;
-//                case Const.READ_CARD_INFO:
-//                    mHandler.removeMessages(Const.COMPER_FINIASH);
-//                    mHandler.removeMessages(Const.READ_CARD_INFO);
-//                    mHandler.removeMessages(Const.COMPER_END);
-//                    oneVsMoreView.setVisibility(View.GONE);
-//                    home_layout.setVisibility(View.GONE);
-//                    pro_xml.setVisibility(View.VISIBLE);
-//                    IdentityInfo identityInfo = (IdentityInfo) msg.obj;
-//                    toComperFace1(identityInfo);
-//                    break;
                 case Const.READ_CARD://收到读卡器的信息
                     mHandler.removeMessages(Const.COMPER_FINIASH);
                     mHandler.removeMessages(Const.READ_CARD);
@@ -647,7 +632,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     @Override
     protected void onStart() {
         super.onStart();
-//        finishSign = false;
     }
 
     @Override
@@ -700,10 +684,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             faceDetectTask.cancel(false);
             faceDetectTask = null;
         }
-//        if (mAsyncTask != null) {
-//            mAsyncTask.setTaskIsRuning(false);
-//            mAsyncTask = null;
-//        }
         //关闭未播报完语音
         if (mPlayer != null) {
             if (mPlayer.isPlaying()) {
@@ -736,8 +716,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     @Override
     protected void onStop() {
         super.onStop();
-//        isSerialOpen = false;
-//        finishSign = true;
     }
 
     @Override
@@ -867,19 +845,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     }
 
     /**
-     * 开启身份证读取线程
-     */
-//    private void startIdCardThread() {
-//        if (mAsyncTask != null) {
-//            mAsyncTask.setTaskIsRuning(false);
-//            mAsyncTask = null;
-//        }
-//        mAsyncTask = new GetIDInfoTask();
-//        mAsyncTask.setTaskIsRuning(true);
-//        mAsyncTask.execute();
-//    }
-
-    /**
      * 开启一个1：N的线程
      */
     private void openOneVsMoreThread(FaceInfoss info) {
@@ -927,30 +892,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             showToast("图片数据长度为0" + idCardInfo.getName());
         }
     }
-
-//    private void toComperFace1(final IdentityInfo identityInfo) {
-//        if (cardBitmap != null) {
-//            synchronized (this) {
-//                new Thread(() -> {
-//                    faceComperFrame(cardBitmap);
-//                    AppData.getAppData().setName(identityInfo.getName().replace(" ", ""));
-//                    AppData.getAppData().setSex(identityInfo.getSex().substring(0, 1));
-//                    AppData.getAppData().setNation(identityInfo.getNation());
-//                    AppData.getAppData().setBirthday(identityInfo.getBorn());
-//                    AppData.getAppData().setAddress(identityInfo.getAddress());
-//                    AppData.getAppData().setCardNo(identityInfo.getNo());
-//                    AppData.getAppData().setCardBmp(cardBitmap);
-//                    Message msg = new Message();
-//                    msg.obj = 5;
-//                    msg.what = Const.COMPER_FINIASH;
-//                    mHandler.sendMessage(msg);
-//                }).start();
-//            }
-//        } else {
-//            Log.i(TAG, "读卡器解码得到的图片为空");
-//        }
-//    }
-
 
     /*1：1比对操作*/
     public void faceComperFrame(Bitmap bmp) {
@@ -1108,7 +1049,7 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
             Log.i(TAG, "连接USB读卡器失败，错误码：" + e.getErrorCode() + "\n错误信息："
                     + e.getMessage() + "\n内部代码="
                     + e.getInternalErrorCode());
-//            showToast("连接USB读卡器失败:" + e.getMessage());
+            showToast("连接USB读卡器失败:" + e.getMessage());
         }
     }
 
@@ -1843,75 +1784,6 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
         }
     }
 
-    /******************串口身份证读卡******************/
-//    private IdentityInfo info;
-//    Bitmap cardBitmap;
-//    byte[] image;
-//    private boolean isSerialOpen = false;
-//    private boolean finishSign = false;
-//
-//    private class GetIDInfoTask extends AsyncTask<Void, Integer, TelpoException> {
-//        public boolean taskIsRuning = true;
-//
-//        public void setTaskIsRuning(boolean taskIsRuning) {
-//            this.taskIsRuning = taskIsRuning;
-//        }
-//
-//        @Override
-//        protected void onPreExecute() {
-//            super.onPreExecute();
-//            info = null;
-//            cardBitmap = null;
-//        }
-//
-//        @Override
-//        protected TelpoException doInBackground(Void... voids) {
-//            while (taskIsRuning) {
-//                TelpoException result = null;
-//                try {
-//                    if (!isSerialOpen || finishSign) {
-//                        IdCard.open(115200, "/dev/ttyS3");
-//                        isSerialOpen = true;
-//                    }
-//                    info = IdCard.checkIdCard(2000);
-//                    if ("".equals(info.getName())) {
-//                        return new TelpoException();
-//                    }
-//                    image = IdCard.getIdCardImage();
-//                    cardBitmap = IdCard.decodeIdCardImage(image);
-//                } catch (TelpoException e) {
-//                    e.printStackTrace();
-//                    result = e;
-//                } finally {
-//
-//                }
-//                return result;
-//            }
-//            return null;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(TelpoException result) {
-//            super.onPostExecute(result);
-//            if (result == null && cardBitmap != null) {
-//                if (finishSign) {
-//                    IdCard.close();
-//                }
-//                if (!info.getName().contains("timeout") && ReaderCardFlag == true) {
-//                    isOpenOneVsMore = false;
-//                    ReaderCardFlag = false;
-//                    Message msg = new Message();
-//                    msg.what = Const.READ_CARD_INFO;
-//                    msg.obj = info;
-//                    mHandler.sendMessage(msg);
-//                }
-//                mHandler.sendEmptyMessageDelayed(Const.MSG_READ_CARD, 2000);
-//            } else {
-//                mHandler.sendMessageDelayed(mHandler.obtainMessage(Const.MSG_READ_CARD, ""), 0);
-//            }
-//        }
-//    }
-
     //上传的所有数据长度大小
     private int mSum = 0;
     //切割后的数据
@@ -2308,13 +2180,13 @@ public class MainActivity extends AppCompatActivity implements NetWorkStateRecei
     /**
      * 返回退出
      */
-    private int time = 30;
+    private int time = 10;
     private DialogFragment dialogFragment;
     private Handler handler;
     private Runnable runnable;
 
     private void showTipExit() {
-        time = 30;
+        time = 10;
         CircleDialog.Builder builder = new CircleDialog.Builder()
                 .setTitle("驾校考勤")
                 .setText("是否退出应用?")
